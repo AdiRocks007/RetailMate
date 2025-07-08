@@ -11,7 +11,7 @@ requests==2.31.0
 # AI/ML - CPU Optimized
 langchain==0.0.335
 chromadb==0.4.18
-sentence-transformers==2.2.2
+sentence-transformers
 
 # Data Processing
 pandas==2.1.3
