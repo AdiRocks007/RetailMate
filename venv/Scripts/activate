@@ -35,7 +35,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="C:\Users\ADITYA\OneDrive\Documents\RetailMate\RetailMate\venv"
+VIRTUAL_ENV="D:\walmart_project\RetailMate\venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
