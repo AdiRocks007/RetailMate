@@ -1,0 +1,73 @@
+# RetailMate Data Sources Configuration - Windows Compatible
+api_endpoints:
+  user_data:
+    dummyjson_users:
+      base_url: "https://dummyjson.com"
+      endpoints:
+        list_users: "/users"
+        user_detail: "/users/{id}"
+      rate_limit: 1000
+      free_tier: true
+      
+    github_api:
+      base_url: "https://api.github.com"
+      endpoints:
+        user_profile: "/users/{username}"
+        user_repos: "/users/{username}/repos"
+      rate_limit: 60
+      auth_required: false
+      
+    jsonplaceholder:
+      base_url: "https://jsonplaceholder.typicode.com"
+      endpoints:
+        users: "/users"
+        user_detail: "/users/{id}"
+      rate_limit: unlimited
+      free_tier: true
+
+  product_data:
+    fake_store_api:
+      base_url: "https://fakestoreapi.com"
+      endpoints:
+        products: "/products"
+        product_detail: "/products/{id}"
+        categories: "/products/categories"
+        category_products: "/products/category/{category}"
+      rate_limit: unlimited
+      free_tier: true
+      
+    dummyjson_products:
+      base_url: "https://dummyjson.com"
+      endpoints:
+        products: "/products"
+        product_detail: "/products/{id}"
+        search: "/products/search"
+        categories: "/products/categories"
+      rate_limit: 1000
+      free_tier: true
+
+  calendar_data:
+    google_calendar:
+      base_url: "https://www.googleapis.com/calendar/v3"
+      endpoints:
+        calendars: "/users/me/calendarList"
+        events: "/calendars/{calendarId}/events"
+      rate_limit: 1000000
+      auth_required: true
+
+processing:
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  chunk_size: 512
+  overlap: 50
+  batch_size: 32
+  
+cache:
+  ttl_seconds: 3600
+  max_size_mb: 100
+  cleanup_interval: 900
+  cache_dir: "data\\cache"
+
+rate_limiting:
+  default_rpm: 60
+  burst_limit: 10
+  backoff_factor: 2
