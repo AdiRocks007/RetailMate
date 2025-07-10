@@ -16,7 +16,9 @@ logger = logging.getLogger("retailmate-embeddings")
 
 class EmbeddingService:
     """Service for generating and managing embeddings"""
-    
+    # Cache loaded SentenceTransformer to avoid reloading for each instance
+    _model_instance: Optional[SentenceTransformer] = None
+
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
         self.model_name = model_name
         self.model: Optional[SentenceTransformer] = None
@@ -27,14 +29,17 @@ class EmbeddingService:
     
     def load_model(self):
         """Load the sentence transformer model"""
-        try:
-            if self.model is None:
+        # Use a shared model instance to improve performance
+        if EmbeddingService._model_instance is None:
+            try:
                 logger.info(f"Loading sentence transformer model: {self.model_name}")
-                self.model = SentenceTransformer(self.model_name)
+                EmbeddingService._model_instance = SentenceTransformer(self.model_name)
                 logger.info("Model loaded successfully")
-        except Exception as e:
-            logger.error(f"Error loading model: {e}")
-            raise
+            except Exception as e:
+                logger.error(f"Error loading model: {e}")
+                raise
+        # Assign the cached model to this instance
+        self.model = EmbeddingService._model_instance
     
     def generate_product_embeddings(self, products: List[UnifiedProduct]) -> Dict[str, np.ndarray]:
         """Generate embeddings for products"""
