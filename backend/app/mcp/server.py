@@ -26,6 +26,9 @@ from ..services.api_clients.holiday_apis.holiday_client import HolidayAPIClient
 from ..services.api_clients.calendar_apis.calendar_client import CalendarClient
 from ..services.data_processing.data_normalizer import DataNormalizer
 from ..services.embeddings.embedding_service import EmbeddingService
+from ..services.rag.vector_store.chroma_store import ChromaVectorStore
+from ..services.rag.context.context_builder import ContextBuilder
+from ..services.ai.ollama.ollama_service import OllamaService
 
 # Configure logging
 logging.basicConfig(
@@ -332,6 +335,10 @@ class RetailMateMCPServer:
                                 "type": "string",
                                 "description": "Search query text"
                             },
+                            "category": {
+                                "type": "string",
+                                "description": "Filter by category (optional)"
+                            },
                             "top_k": {
                                 "type": "integer",
                                 "description": "Number of results to return",
@@ -372,6 +379,137 @@ class RetailMateMCPServer:
                                 "default": "both"
                             }
                         },
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="initialize_vector_store",
+                    description="Initialize ChromaDB with products and users",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "reset_existing": {
+                                "type": "boolean",
+                                "description": "Reset existing collections",
+                                "default": False
+                            }
+                        },
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="rag_search",
+                    description="RAG-powered product search with context",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Search query"
+                            },
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID for personalization (optional)"
+                            },
+                            "max_results": {
+                                "type": "integer",
+                                "description": "Maximum number of results",
+                                "default": 5,
+                                "minimum": 1,
+                                "maximum": 20
+                            }
+                        },
+                        "required": ["query"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="event_shopping_assistant",
+                    description="Get shopping suggestions for calendar events",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "event_id": {
+                                "type": "string",
+                                "description": "Calendar event ID"
+                            }
+                        },
+                        "required": ["event_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="get_vector_store_stats",
+                    description="Get ChromaDB collection statistics",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="ai_shopping_assistant",
+                    description="AI-powered shopping recommendations using Ollama",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "User's shopping question or request"
+                            },
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID for personalization (optional)"
+                            }
+                        },
+                        "required": ["query"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="ai_event_planner",
+                    description="AI event shopping planner using calendar context",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "event_id": {
+                                "type": "string",
+                                "description": "Calendar event ID"
+                            }
+                        },
+                        "required": ["event_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="ai_chat",
+                    description="Conversational AI shopping assistant",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "message": {
+                                "type": "string",
+                                "description": "User message"
+                            },
+                            "conversation_id": {
+                                "type": "string",
+                                "description": "Conversation identifier"
+                            },
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID (optional)"
+                            }
+                        },
+                        "required": ["message", "conversation_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="get_ai_status",
+                    description="Get Ollama model status and capabilities",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},
                         "additionalProperties": False
                     }
                 )
@@ -751,21 +889,30 @@ class RetailMateMCPServer:
                             text=f"Error generating embeddings: {str(e)}"
                         )]
                 elif name == "semantic_search":
+                    # Semantic search with optional category filtering
                     query = arguments.get("query")
+                    category = arguments.get("category")
                     top_k = arguments.get("top_k", 5)
                     try:
                         embedding_service = EmbeddingService()
-                        product_embeddings = embedding_service.load_embeddings("products")
-                        if not product_embeddings:
-                            return [TextContent(
-                                type="text",
-                                text="Error: Product embeddings not found. Run 'generate_embeddings' first."
-                            )]
-                        similar_products = embedding_service.find_similar_products(query, product_embeddings, top_k)
+                        embedding_service.load_model()
+                        vector_store = ChromaVectorStore()
+                        # Generate query embedding
+                        query_embedding = embedding_service.model.encode([query])[0]
+                        # Build filters
+                        filters = {}
+                        if category:
+                            filters["normalized_category"] = category
+                        # Perform vector-based search
+                        search_results = vector_store.search_products(
+                            query_embedding=query_embedding,
+                            n_results=top_k,
+                            filters=filters if filters else None
+                        )
                         result = {
                             "query": query,
-                            "total_embeddings_searched": len(product_embeddings),
-                            "results": similar_products,
+                            "total_embeddings_searched": search_results["total_found"],
+                            "results": search_results["products"],
                             "model_info": embedding_service.get_model_info()
                         }
                         return [TextContent(
@@ -776,6 +923,182 @@ class RetailMateMCPServer:
                         return [TextContent(
                             type="text",
                             text=f"Error performing semantic search: {str(e)}"
+                        )]
+                elif name == "initialize_vector_store":
+                    reset_existing = arguments.get("reset_existing", False)
+                    try:
+                        vector_store = ChromaVectorStore()
+                        if reset_existing:
+                            vector_store.reset_collections()
+                            logger.info("Reset existing collections")
+                        # Load normalized data
+                        normalizer = DataNormalizer()
+                        product_collection = await normalizer.normalize_all_products()
+                        user_collection = await normalizer.normalize_all_users()
+                        # Load embeddings
+                        embedding_service = EmbeddingService()
+                        product_embeddings = embedding_service.load_embeddings("products")
+                        user_embeddings = embedding_service.load_embeddings("users")
+                        if not product_embeddings or not user_embeddings:
+                            return [TextContent(
+                                type="text",
+                                text="Error: Embeddings not found. Run 'generate_embeddings' first."
+                            )]
+                        # Add to ChromaDB
+                        products_added = vector_store.add_products(product_collection.products, product_embeddings)
+                        users_added = vector_store.add_users(user_collection.users, user_embeddings)
+                        # Get stats
+                        stats = vector_store.get_collection_stats()
+                        result = {
+                            "status": "success",
+                            "products_added": products_added,
+                            "users_added": users_added,
+                            "collection_stats": stats
+                        }
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error initializing vector store: {str(e)}"
+                        )]
+                elif name == "rag_search":
+                    query = arguments.get("query")
+                    user_id = arguments.get("user_id")
+                    max_results = arguments.get("max_results", 5)
+                    try:
+                        context_builder = ContextBuilder()
+                        # Build comprehensive context
+                        context = await context_builder.build_shopping_context(
+                            user_query=query,
+                            user_id=user_id,
+                            max_products=max_results
+                        )
+                        # Format for display
+                        result = {
+                            "query": query,
+                            "context_summary": {
+                                "products_found": len(context["product_recommendations"]),
+                                "user_context_available": bool(context["user_context"]),
+                                "calendar_events": len(context["calendar_context"]),
+                                "similar_users": len(context["similar_users"])
+                            },
+                            "recommended_products": context["product_recommendations"],
+                            "upcoming_events": context["calendar_context"],
+                            "formatted_context": context_builder.format_context_for_llm(context)
+                        }
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error performing RAG search: {str(e)}"
+                        )]
+                elif name == "event_shopping_assistant":
+                    event_id = arguments.get("event_id")
+                    try:
+                        context_builder = ContextBuilder()
+                        # Build event-specific context
+                        context = await context_builder.build_event_shopping_context(event_id)
+                        result = {
+                            "event_details": context["event"],
+                            "shopping_urgency": context["urgency"],
+                            "recommended_products": context["product_suggestions"][:8],
+                            "shopping_categories": context["shopping_list"]
+                        }
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error building event shopping context: {str(e)}"
+                        )]
+                elif name == "get_vector_store_stats":
+                    try:
+                        vector_store = ChromaVectorStore()
+                        stats = vector_store.get_collection_stats()
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(stats, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error getting vector store stats: {str(e)}"
+                        )]
+                elif name == "ai_shopping_assistant":
+                    query = arguments.get("query")
+                    user_id = arguments.get("user_id")
+                    try:
+                        ollama_service = OllamaService()
+                        # Generate AI-powered recommendation
+                        recommendation = await ollama_service.generate_shopping_recommendation(
+                            user_query=query,
+                            user_id=user_id
+                        )
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(recommendation, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error generating AI recommendation: {str(e)}"
+                        )]
+                elif name == "ai_event_planner":
+                    event_id = arguments.get("event_id")
+                    try:
+                        ollama_service = OllamaService()
+                        # Generate event-specific shopping advice
+                        advice = await ollama_service.generate_event_shopping_advice(event_id)
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(advice, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error generating event advice: {str(e)}"
+                        )]
+                elif name == "ai_chat":
+                    message = arguments.get("message")
+                    conversation_id = arguments.get("conversation_id")
+                    user_id = arguments.get("user_id")
+                    try:
+                        ollama_service = OllamaService()
+                        # Handle conversational interaction
+                        chat_response = await ollama_service.chat_conversation(
+                            message=message,
+                            conversation_id=conversation_id,
+                            user_id=user_id
+                        )
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(chat_response, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error in AI chat: {str(e)}"
+                        )]
+                elif name == "get_ai_status":
+                    try:
+                        ollama_service = OllamaService()
+                        status = ollama_service.get_model_status()
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(status, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error checking AI status: {str(e)}"
                         )]
                 
                 else:
