@@ -19,6 +19,9 @@ from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 from pydantic import BaseModel, Field
 
+from ..services.api_clients.user_apis.dummyjson_client import DummyJSONUsersClient
+from ..services.api_clients.product_apis.fake_store_client import FakeStoreAPIClient
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -110,6 +113,69 @@ class RetailMateMCPServer:
                         "properties": {},
                         "additionalProperties": False
                     }
+                ),
+                Tool(
+                    name="get_user_data",
+                    description="Get user data from DummyJSON API",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "user_id": {
+                                "type": "integer",
+                                "description": "User ID to fetch",
+                                "minimum": 1
+                            },
+                            "include_preferences": {
+                                "type": "boolean",
+                                "description": "Include derived shopping preferences",
+                                "default": True
+                            }
+                        },
+                        "required": ["user_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="search_products",
+                    description="Search products using Fake Store API",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "Search query for products"
+                            },
+                            "category": {
+                                "type": "string",
+                                "description": "Filter by category (optional)"
+                            },
+                            "limit": {
+                                "type": "integer",
+                                "description": "Maximum number of results",
+                                "default": 10,
+                                "minimum": 1,
+                                "maximum": 20
+                            }
+                        },
+                        "required": ["query"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="get_product_recommendations",
+                    description="Get personalized product recommendations",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "user_id": {
+                                "type": "integer",
+                                "description": "User ID for personalization",
+                                "minimum": 1
+                            }
+                        },
+                        "required": ["user_id"],
+                        "additionalProperties": False
+                    }
                 )
             ]
         
@@ -149,6 +215,65 @@ class RetailMateMCPServer:
                         type="text",
                         text=json.dumps(sources, indent=2)
                     )]
+                
+                elif name == "get_user_data":
+                    user_id = arguments.get("user_id")
+                    include_preferences = arguments.get("include_preferences", True)
+                    try:
+                        async with DummyJSONUsersClient() as client:
+                            if include_preferences:
+                                user_data = await client.get_user_preferences(user_id)
+                            else:
+                                user_data = await client.get_user_by_id(user_id)
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(user_data, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error fetching user data: {str(e)}"
+                        )]
+                
+                elif name == "search_products":
+                    query = arguments.get("query")
+                    category = arguments.get("category")
+                    limit = arguments.get("limit", 10)
+                    try:
+                        async with FakeStoreAPIClient() as client:
+                            products = await client.search_products(query, category)
+                            products = products[:limit]
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(products, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error searching products: {str(e)}"
+                        )]
+                
+                elif name == "get_product_recommendations":
+                    user_id = arguments.get("user_id")
+                    try:
+                        async with DummyJSONUsersClient() as user_client:
+                            user_preferences = await user_client.get_user_preferences(user_id)
+                        async with FakeStoreAPIClient() as product_client:
+                            recommendations = await product_client.get_product_recommendations(user_preferences)
+                        result = {
+                            "user_id": user_id,
+                            "recommendations": recommendations,
+                            "total_found": len(recommendations)
+                        }
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error generating recommendations: {str(e)}"
+                        )]
                 
                 else:
                     return [TextContent(
