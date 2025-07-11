@@ -29,6 +29,7 @@ from ..services.embeddings.embedding_service import EmbeddingService
 from ..services.rag.vector_store.chroma_store import ChromaVectorStore
 from ..services.rag.context.context_builder import ContextBuilder
 from ..services.ai.ollama.ollama_service import OllamaService
+from ..services.cart.cart_service import CartService
 
 # Configure logging
 logging.basicConfig(
@@ -68,7 +69,10 @@ class RetailMateMCPServer:
         
         # Register server handlers
         self._register_handlers()
+        # Register core tools
         self._register_core_tools()
+        # Initialize a single CartService instance for persistent cart state
+        self.cart_service = CartService()
         
         logger.info("RetailMate MCP Server initialized successfully")
     
@@ -510,6 +514,106 @@ class RetailMateMCPServer:
                     inputSchema={
                         "type": "object",
                         "properties": {},
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="add_to_cart",
+                    description="Add product to user's cart with AI reasoning",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "product_id": {
+                                "type": "string",
+                                "description": "Product ID to add to cart"
+                            },
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID"
+                            },
+                            "quantity": {
+                                "type": "integer",
+                                "description": "Quantity to add",
+                                "default": 1
+                            },
+                            "ai_reasoning": {
+                                "type": "string",
+                                "description": "AI explanation for why this product is recommended"
+                            }
+                        },
+                        "required": ["product_id", "user_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="remove_from_cart",
+                    description="Remove product from user's cart",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "product_id": {
+                                "type": "string",
+                                "description": "Product ID to remove"
+                            },
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID"
+                            },
+                            "quantity": {
+                                "type": "integer",
+                                "description": "Quantity to remove (optional - removes all if not specified)"
+                            }
+                        },
+                        "required": ["product_id", "user_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="get_cart_contents",
+                    description="Get user's complete cart contents",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID"
+                            }
+                        },
+                        "required": ["user_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="get_cart_suggestions",
+                    description="Get AI-powered cart suggestions and optimizations",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID"
+                            },
+                            "query": {
+                                "type": "string",
+                                "description": "Optional query for specific suggestions"
+                            }
+                        },
+                        "required": ["user_id"],
+                        "additionalProperties": False
+                    }
+                ),
+                Tool(
+                    name="clear_cart",
+                    description="Clear user's cart completely",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "user_id": {
+                                "type": "string",
+                                "description": "User ID"
+                            }
+                        },
+                        "required": ["user_id"],
                         "additionalProperties": False
                     }
                 )
@@ -1099,6 +1203,106 @@ class RetailMateMCPServer:
                         return [TextContent(
                             type="text",
                             text=f"Error checking AI status: {str(e)}"
+                        )]
+                
+                elif name == "add_to_cart":
+                    product_id = arguments.get("product_id")
+                    user_id = arguments.get("user_id")
+                    quantity = arguments.get("quantity", 1)
+                    ai_reasoning = arguments.get("ai_reasoning", "")
+                    
+                    try:
+                        cart_service = self.cart_service
+                        result = await cart_service.add_item(
+                            user_id=user_id,
+                            product_id=product_id,
+                            quantity=quantity,
+                            ai_reasoning=ai_reasoning
+                        )
+                        
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error adding to cart: {str(e)}"
+                        )]
+
+                elif name == "remove_from_cart":
+                    product_id = arguments.get("product_id")
+                    user_id = arguments.get("user_id")
+                    quantity = arguments.get("quantity")
+                    
+                    try:
+                        cart_service = self.cart_service
+                        result = await cart_service.remove_item(
+                            user_id=user_id,
+                            product_id=product_id,
+                            quantity=quantity
+                        )
+                        
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error removing from cart: {str(e)}"
+                        )]
+
+                elif name == "get_cart_contents":
+                    user_id = arguments.get("user_id")
+                    
+                    try:
+                        cart_service = self.cart_service
+                        result = await cart_service.get_cart_contents(user_id)
+                        
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error getting cart contents: {str(e)}"
+                        )]
+
+                elif name == "get_cart_suggestions":
+                    user_id = arguments.get("user_id")
+                    query = arguments.get("query", "")
+                    
+                    try:
+                        cart_service = self.cart_service
+                        result = await cart_service.get_smart_suggestions(user_id, query)
+                        
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error getting cart suggestions: {str(e)}"
+                        )]
+
+                elif name == "clear_cart":
+                    user_id = arguments.get("user_id")
+                    
+                    try:
+                        cart_service = self.cart_service
+                        result = await cart_service.clear_cart(user_id)
+                        
+                        return [TextContent(
+                            type="text",
+                            text=json.dumps(result, indent=2)
+                        )]
+                    except Exception as e:
+                        return [TextContent(
+                            type="text",
+                            text=f"Error clearing cart: {str(e)}"
                         )]
                 
                 else:
