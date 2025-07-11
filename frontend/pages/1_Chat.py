@@ -178,15 +178,15 @@ with col1:
                 """, unsafe_allow_html=True)
     
     # Chat input
-    st.markdown("### ✍️ Send Message")
+    st.markdown("### ✍ Send Message")
     
     # Quick action buttons
-    st.markdown("**Quick Actions:**")
+    st.markdown("*Quick Actions:*")
     
     col1_1, col1_2, col1_3, col1_4 = st.columns(4)
     
     with col1_1:
-        if st.button("🛍️ Product Info"):
+        if st.button("🛍 Product Info"):
             user_message = "I need information about your products"
             st.session_state.messages.append({"role": "user", "content": user_message, "timestamp": datetime.now()})
             
@@ -284,7 +284,7 @@ with col2:
     # Quick help
     st.markdown("### 🆘 Quick Help")
     st.info("""
-    **Common Questions:**
+    *Common Questions:*
     - Product information
     - Order status & tracking
     - Returns & refunds
@@ -306,7 +306,7 @@ with col2:
         st.info("Connecting you to a human agent...\nEstimated wait time: 3 minutes")
 
 # Clear chat button
-if st.button("🗑️ Clear Chat History"):
+if st.button("🗑 Clear Chat History"):
     st.session_state.messages = [
         {"role": "system", "content": "Chat history cleared. Welcome back to RetailMate! How can I assist you today?", "timestamp": datetime.now()}
     ]
