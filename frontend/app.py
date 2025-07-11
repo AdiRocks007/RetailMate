@@ -62,6 +62,10 @@ st.markdown("""
         color: white;
         text-align: center;
         box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+        height: 220px; /* Fixed height for uniformity */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .cart-notification {

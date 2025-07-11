@@ -102,21 +102,25 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     
-    .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 25px;
-        padding: 0.5rem 2rem;
-        font-weight: bold;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
-    }
+.stButton > button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    padding: 0.8rem 2.2rem;   /* Slightly more padding */
+    font-weight: bold;
+    transition: all 0.3s ease;
+    width: 180px;
+    height: 65px;             /* Increased height */
+    white-space: normal;      /* Allow wrapping */
+    font-size: 1rem;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -186,7 +190,7 @@ with col1:
     col1_1, col1_2, col1_3, col1_4 = st.columns(4)
     
     with col1_1:
-        if st.button("🛍 Product Info"):
+        if st.button("Product Info"):
             user_message = "I need information about your products"
             st.session_state.messages.append({"role": "user", "content": user_message, "timestamp": datetime.now()})
             
@@ -196,7 +200,7 @@ with col1:
             st.rerun()
     
     with col1_2:
-        if st.button("📦 Order Status"):
+        if st.button("Order Status"):
             user_message = "What's the status of my recent order?"
             st.session_state.messages.append({"role": "user", "content": user_message, "timestamp": datetime.now()})
             
@@ -205,7 +209,7 @@ with col1:
             st.rerun()
     
     with col1_3:
-        if st.button("💰 Returns & Refunds"):
+        if st.button("Returns & Refunds"):
             user_message = "I need help with returns and refunds"
             st.session_state.messages.append({"role": "user", "content": user_message, "timestamp": datetime.now()})
             
@@ -214,7 +218,7 @@ with col1:
             st.rerun()
     
     with col1_4:
-        if st.button("🎁 Recommendations"):
+        if st.button("Recommendations"):
             user_message = "Can you recommend some products for me?"
             st.session_state.messages.append({"role": "user", "content": user_message, "timestamp": datetime.now()})
             

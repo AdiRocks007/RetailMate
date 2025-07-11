@@ -5,6 +5,14 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
 from plotly.subplots import make_subplots
+import warnings
+
+# Suppress specific deprecation warnings
+warnings.filterwarnings('ignore', category=FutureWarning, module='_plotly_utils')
+warnings.filterwarnings('ignore', category=FutureWarning, module='pandas')
+
+# Or suppress all FutureWarnings if you prefer (less specific)
+# warnings.filterwarnings('ignore', category=FutureWarning)
 
 # Page configuration
 st.set_page_config(page_title="Analytics Dashboard", layout="wide")
