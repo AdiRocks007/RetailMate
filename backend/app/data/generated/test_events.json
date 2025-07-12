@@ -1,0 +1,1152 @@
+[
+  {
+    "id": "event_25",
+    "title": "Holiday Celebration",
+    "start_date": "2025-07-17T14:51:04.708661",
+    "end_date": "2025-07-17T16:51:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 7,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": true,
+    "location": "Home"
+  },
+  {
+    "id": "event_18",
+    "title": "Gym Session",
+    "start_date": "2025-07-21T14:51:04.708661",
+    "end_date": "2025-07-21T17:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 11,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_12",
+    "title": "Product Demo",
+    "start_date": "2025-07-22T14:51:04.708661",
+    "end_date": "2025-07-22T15:21:04.708661",
+    "type": "work",
+    "categories": [
+      "business",
+      "professional",
+      "meeting"
+    ],
+    "shopping_needs": [
+      "business attire",
+      "notebooks",
+      "tech accessories"
+    ],
+    "days_until": 12,
+    "attendees": 4,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_41",
+    "title": "Dinner Party",
+    "start_date": "2025-07-22T14:51:04.708661",
+    "end_date": "2025-07-22T16:21:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 12,
+    "attendees": 6,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": true,
+    "location": "Park"
+  },
+  {
+    "id": "event_16",
+    "title": "Hair Appointment",
+    "start_date": "2025-07-27T14:51:04.708661",
+    "end_date": "2025-07-27T15:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 17,
+    "attendees": 1,
+    "importance": "medium",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Home"
+  },
+  {
+    "id": "event_48",
+    "title": "Project Review",
+    "start_date": "2025-08-01T14:51:04.708661",
+    "end_date": "2025-08-01T17:51:04.708661",
+    "type": "work",
+    "categories": [
+      "business",
+      "professional",
+      "meeting"
+    ],
+    "shopping_needs": [
+      "business attire",
+      "notebooks",
+      "tech accessories"
+    ],
+    "days_until": 22,
+    "attendees": 8,
+    "importance": "high",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Online"
+  },
+  {
+    "id": "event_46",
+    "title": "Kids Soccer Game",
+    "start_date": "2025-08-04T14:51:04.708661",
+    "end_date": "2025-08-04T15:51:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 25,
+    "attendees": 1,
+    "importance": "medium",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Online"
+  },
+  {
+    "id": "event_37",
+    "title": "Gym Session",
+    "start_date": "2025-08-10T14:51:04.708661",
+    "end_date": "2025-08-10T18:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 31,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_40",
+    "title": "Book Club",
+    "start_date": "2025-08-19T14:51:04.708661",
+    "end_date": "2025-08-19T22:51:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 40,
+    "attendees": 2,
+    "importance": "medium",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_24",
+    "title": "Camping Trip",
+    "start_date": "2025-08-20T14:51:04.708661",
+    "end_date": "2025-08-20T16:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 41,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_3",
+    "title": "Birthday Party",
+    "start_date": "2025-09-10T14:51:04.708661",
+    "end_date": "2025-09-10T15:21:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 62,
+    "attendees": 5,
+    "importance": "medium",
+    "preparation_needed": false,
+    "gift_needed": true,
+    "location": "Office"
+  },
+  {
+    "id": "event_8",
+    "title": "Camping Trip",
+    "start_date": "2025-09-17T14:51:04.708661",
+    "end_date": "2025-09-17T15:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 69,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_49",
+    "title": "Parent-Teacher Conference",
+    "start_date": "2025-09-20T14:51:04.708661",
+    "end_date": "2025-09-20T16:21:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 72,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_2",
+    "title": "Hair Appointment",
+    "start_date": "2025-09-22T14:51:04.708661",
+    "end_date": "2025-09-22T16:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 74,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Home"
+  },
+  {
+    "id": "event_34",
+    "title": "Road Trip",
+    "start_date": "2025-09-26T14:51:04.708661",
+    "end_date": "2025-09-26T15:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 78,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_50",
+    "title": "Strategy Meeting",
+    "start_date": "2025-09-27T14:51:04.708661",
+    "end_date": "2025-09-27T15:21:04.708661",
+    "type": "work",
+    "categories": [
+      "business",
+      "professional",
+      "meeting"
+    ],
+    "shopping_needs": [
+      "business attire",
+      "notebooks",
+      "tech accessories"
+    ],
+    "days_until": 79,
+    "attendees": 9,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Home"
+  },
+  {
+    "id": "event_4",
+    "title": "School Event",
+    "start_date": "2025-09-29T14:51:04.708661",
+    "end_date": "2025-09-29T22:51:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 81,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_35",
+    "title": "Conference Travel",
+    "start_date": "2025-09-29T14:51:04.708661",
+    "end_date": "2025-09-29T15:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 81,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Home"
+  },
+  {
+    "id": "event_44",
+    "title": "Conference Travel",
+    "start_date": "2025-09-29T14:51:04.708661",
+    "end_date": "2025-09-29T18:51:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 81,
+    "attendees": 1,
+    "importance": "medium",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Restaurant"
+  },
+  {
+    "id": "event_36",
+    "title": "Game Night",
+    "start_date": "2025-10-06T14:51:04.708661",
+    "end_date": "2025-10-06T22:51:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 88,
+    "attendees": 2,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_7",
+    "title": "Conference Travel",
+    "start_date": "2025-10-07T14:51:04.708661",
+    "end_date": "2025-10-07T15:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 89,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_47",
+    "title": "Vacation",
+    "start_date": "2025-10-07T14:51:04.708661",
+    "end_date": "2025-10-07T18:51:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 89,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Home"
+  },
+  {
+    "id": "event_28",
+    "title": "Graduation",
+    "start_date": "2025-10-10T14:51:04.708661",
+    "end_date": "2025-10-10T17:51:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 92,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": true,
+    "location": "Office"
+  },
+  {
+    "id": "event_38",
+    "title": "Gym Session",
+    "start_date": "2025-10-13T14:51:04.708661",
+    "end_date": "2025-10-13T15:21:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 95,
+    "attendees": 1,
+    "importance": "medium",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Park"
+  },
+  {
+    "id": "event_27",
+    "title": "International Travel",
+    "start_date": "2025-10-16T14:51:04.708661",
+    "end_date": "2025-10-16T18:51:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 98,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Restaurant"
+  },
+  {
+    "id": "event_5",
+    "title": "Kids Soccer Game",
+    "start_date": "2025-10-22T14:51:04.708661",
+    "end_date": "2025-10-22T16:21:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 104,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": true,
+    "location": "TBD"
+  },
+  {
+    "id": "event_43",
+    "title": "Holiday Celebration",
+    "start_date": "2025-10-25T14:51:04.708661",
+    "end_date": "2025-10-25T16:51:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 107,
+    "attendees": 1,
+    "importance": "medium",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Restaurant"
+  },
+  {
+    "id": "event_6",
+    "title": "Hair Appointment",
+    "start_date": "2025-10-26T14:51:04.708661",
+    "end_date": "2025-10-26T22:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 108,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Restaurant"
+  },
+  {
+    "id": "event_19",
+    "title": "Family Reunion",
+    "start_date": "2025-10-27T14:51:04.708661",
+    "end_date": "2025-10-27T15:21:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 109,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": true,
+    "location": "Home"
+  },
+  {
+    "id": "event_22",
+    "title": "Business Trip",
+    "start_date": "2025-10-27T14:51:04.708661",
+    "end_date": "2025-10-27T16:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 109,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_11",
+    "title": "Conference Call",
+    "start_date": "2025-10-30T14:51:04.708661",
+    "end_date": "2025-10-30T16:21:04.708661",
+    "type": "work",
+    "categories": [
+      "business",
+      "professional",
+      "meeting"
+    ],
+    "shopping_needs": [
+      "business attire",
+      "notebooks",
+      "tech accessories"
+    ],
+    "days_until": 112,
+    "attendees": 10,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_39",
+    "title": "Wedding",
+    "start_date": "2025-10-30T14:51:04.708661",
+    "end_date": "2025-10-30T16:51:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 112,
+    "attendees": 10,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Restaurant"
+  },
+  {
+    "id": "event_32",
+    "title": "Theater Show",
+    "start_date": "2025-11-01T14:51:04.708661",
+    "end_date": "2025-11-01T15:21:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 114,
+    "attendees": 9,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Park"
+  },
+  {
+    "id": "event_29",
+    "title": "House Cleaning",
+    "start_date": "2025-11-03T14:51:04.708661",
+    "end_date": "2025-11-03T17:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 116,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Mall"
+  },
+  {
+    "id": "event_17",
+    "title": "Holiday Celebration",
+    "start_date": "2025-11-09T14:51:04.708661",
+    "end_date": "2025-11-09T16:21:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 122,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": true,
+    "location": "Park"
+  },
+  {
+    "id": "event_14",
+    "title": "Training Session",
+    "start_date": "2025-11-17T14:51:04.708661",
+    "end_date": "2025-11-17T15:51:04.708661",
+    "type": "work",
+    "categories": [
+      "business",
+      "professional",
+      "meeting"
+    ],
+    "shopping_needs": [
+      "business attire",
+      "notebooks",
+      "tech accessories"
+    ],
+    "days_until": 130,
+    "attendees": 10,
+    "importance": "medium",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_30",
+    "title": "House Cleaning",
+    "start_date": "2025-11-18T14:51:04.708661",
+    "end_date": "2025-11-18T17:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 131,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Park"
+  },
+  {
+    "id": "event_33",
+    "title": "Parent-Teacher Conference",
+    "start_date": "2025-11-18T14:51:04.708661",
+    "end_date": "2025-11-18T17:51:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 131,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": true,
+    "location": "TBD"
+  },
+  {
+    "id": "event_42",
+    "title": "Training Session",
+    "start_date": "2025-11-27T14:51:04.708661",
+    "end_date": "2025-11-27T16:21:04.708661",
+    "type": "work",
+    "categories": [
+      "business",
+      "professional",
+      "meeting"
+    ],
+    "shopping_needs": [
+      "business attire",
+      "notebooks",
+      "tech accessories"
+    ],
+    "days_until": 140,
+    "attendees": 7,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_10",
+    "title": "Honeymoon",
+    "start_date": "2025-12-03T14:51:04.708661",
+    "end_date": "2025-12-03T16:51:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 146,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Restaurant"
+  },
+  {
+    "id": "event_13",
+    "title": "Birthday Party",
+    "start_date": "2025-12-07T14:51:04.708661",
+    "end_date": "2025-12-07T15:51:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 150,
+    "attendees": 10,
+    "importance": "high",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Mall"
+  },
+  {
+    "id": "event_45",
+    "title": "Camping Trip",
+    "start_date": "2025-12-08T14:51:04.708661",
+    "end_date": "2025-12-08T15:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 151,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_26",
+    "title": "Hair Appointment",
+    "start_date": "2025-12-09T14:51:04.708661",
+    "end_date": "2025-12-09T18:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 152,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Mall"
+  },
+  {
+    "id": "event_9",
+    "title": "Game Night",
+    "start_date": "2025-12-15T14:51:04.708661",
+    "end_date": "2025-12-15T22:51:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 158,
+    "attendees": 5,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Park"
+  },
+  {
+    "id": "event_31",
+    "title": "Graduation",
+    "start_date": "2025-12-18T14:51:04.708661",
+    "end_date": "2025-12-18T17:51:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 161,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Online"
+  },
+  {
+    "id": "event_1",
+    "title": "Parent-Teacher Conference",
+    "start_date": "2025-12-21T14:51:04.708661",
+    "end_date": "2025-12-21T15:21:04.708661",
+    "type": "family",
+    "categories": [
+      "family",
+      "children",
+      "education"
+    ],
+    "shopping_needs": [
+      "family gifts",
+      "children's items",
+      "travel gear"
+    ],
+    "days_until": 164,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Home"
+  },
+  {
+    "id": "event_15",
+    "title": "Family Visit",
+    "start_date": "2025-12-21T14:51:04.708661",
+    "end_date": "2025-12-21T15:21:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 164,
+    "attendees": 1,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_20",
+    "title": "Car Service",
+    "start_date": "2025-12-23T14:51:04.708661",
+    "end_date": "2025-12-23T17:51:04.708661",
+    "type": "personal",
+    "categories": [
+      "health",
+      "lifestyle",
+      "maintenance"
+    ],
+    "shopping_needs": [
+      "casual wear",
+      "health products",
+      "home supplies"
+    ],
+    "days_until": 166,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": true,
+    "gift_needed": false,
+    "location": "Office"
+  },
+  {
+    "id": "event_23",
+    "title": "BBQ Party",
+    "start_date": "2025-12-29T14:51:04.708661",
+    "end_date": "2025-12-29T18:51:04.708661",
+    "type": "social",
+    "categories": [
+      "celebration",
+      "entertainment",
+      "cultural"
+    ],
+    "shopping_needs": [
+      "gifts",
+      "party supplies",
+      "formal wear"
+    ],
+    "days_until": 172,
+    "attendees": 9,
+    "importance": "high",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "TBD"
+  },
+  {
+    "id": "event_21",
+    "title": "International Travel",
+    "start_date": "2025-12-31T14:51:04.708661",
+    "end_date": "2025-12-31T17:51:04.708661",
+    "type": "travel",
+    "categories": [
+      "travel",
+      "vacation",
+      "business travel"
+    ],
+    "shopping_needs": [
+      "luggage",
+      "travel accessories",
+      "clothing"
+    ],
+    "days_until": 174,
+    "attendees": 1,
+    "importance": "low",
+    "preparation_needed": false,
+    "gift_needed": false,
+    "location": "Home"
+  }
+]
