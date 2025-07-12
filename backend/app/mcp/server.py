@@ -1141,8 +1141,8 @@ class RetailMateMCPServer:
                     user_id = arguments.get("user_id")
                     try:
                         ollama_service = OllamaService()
-                        # Generate AI-powered recommendation
-                        recommendation = await ollama_service.generate_shopping_recommendation(
+                        # Generate AI-powered cart-aware recommendation
+                        recommendation = await ollama_service.generate_cart_aware_recommendation(
                             user_query=query,
                             user_id=user_id
                         )
