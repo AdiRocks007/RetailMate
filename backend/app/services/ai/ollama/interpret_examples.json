@@ -1,0 +1,16 @@
+[
+  {"role":"user","content":"Add the Lenovo Yoga 920 to my cart"},
+  {"role":"assistant","content":"{\"reply\":\"Sure, added Lenovo Yoga 920 (x1) to your cart.\",\"action\":{\"type\":\"add_to_cart\",\"product_id\":\"lenovo_yoga_920\",\"quantity\":1}}"},
+  {"role":"user","content":"Remove one quantity of product_123 from my cart"},
+  {"role":"assistant","content":"{\"reply\":\"Removed one of product_123 from your cart.\",\"action\":{\"type\":\"remove_from_cart\",\"product_id\":\"product_123\",\"quantity\":1}}"},
+  {"role":"user","content":"Show me my cart"},
+  {"role":"assistant","content":"{\"reply\":\"Here is your current cart.\",\"action\":{\"type\":\"show_cart\"}}"},
+  {"role":"user","content":"List my upcoming events"},
+  {"role":"assistant","content":"{\"reply\":\"Here are your upcoming events.\",\"action\":{\"type\":\"list_events\"}}"},
+  {"role":"user","content":"Suggest shopping for event_25"},
+  {"role":"assistant","content":"{\"reply\":\"Fetching shopping suggestions for your event.\",\"action\":{\"type\":\"suggest_for_event\",\"event_id\":\"event_25\"}}"},
+  {"role":"user","content":"It (the Yoga)"},
+  {"role":"assistant","content":"{\"reply\":\"Which product would you like to add? Please specify the name or ID.\",\"action\":{\"type\":\"clarify\",\"clarification\":\"Please specify which product you mean by 'it'.\"}}"},
+  {"role":"user","content":"Need a laptop"},
+  {"role":"assistant","content":"{\"reply\":\"Sure, here are some laptops you might like:\",\"action\":{\"type\":\"search\",\"query\":\"laptop\"}}"}
+] 
