@@ -11,6 +11,8 @@ from ...rag.context.context_builder import ContextBuilder
 from ...cart.cart_service import CartService
 from ..structured_output.response_models import ShoppingAdviceResponse
 from pydantic import ValidationError
+from ...api_clients.calendar_apis.calendar_client import CalendarClient
+from backend.app.services.classify_query import classify_user_query
 
 logger = logging.getLogger("retailmate-ollama")
 
@@ -22,6 +24,8 @@ class OllamaService:
         self.context_builder = ContextBuilder()
         self.cart_service = CartService()  # Add cart service
         self.conversation_history: Dict[str, List[Dict]] = {}
+        # Track last fetched event for follow-up suggestions
+        self.last_event_id: Optional[str] = None
         
         logger.info(f"Ollama service initialized with model: {model_name}")
     
@@ -76,12 +80,14 @@ class OllamaService:
     async def generate_shopping_recommendation(self, user_query: str, user_id: Optional[str] = None) -> Dict[str, Any]:
         """Generate shopping recommendations based on user query"""
         try:
-            # Build comprehensive context
+            # Build comprehensive context (skip calendar unless explicitly requested)
             context = await self.context_builder.build_shopping_context(
                 user_query=user_query,
                 user_id=user_id,
                 max_products=5
             )
+            # Remove calendar events from context for general shopping
+            context["calendar_context"] = []
             
             # Format context for LLM
             formatted_context = self.context_builder.format_context_for_llm(context)
@@ -129,8 +135,8 @@ Shopping advice:
             structured_content = struct_response['message']['content']
             try:
                 structured = ShoppingAdviceResponse.model_validate_json(structured_content)
-            except ValidationError as e:
-                logger.error(f"Structured JSON validation failed: {e}")
+            except ValidationError:
+                # Ignore JSON schema errors silently
                 structured = None
             recommendation = {
                 "query": user_query,
@@ -170,7 +176,6 @@ Please provide:
 1. A direct answer to their question
 2. Specific product recommendations from the context
 3. Why these products are suitable
-4. Any calendar-based suggestions if relevant
 
 Keep your response helpful, friendly, and focused on shopping assistance.
 """
@@ -377,102 +382,182 @@ Provide a shopping plan including:
         return "\n".join(formatted)
     
     async def chat_conversation(self, message: str, conversation_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
-        """Handle conversational chat about shopping"""
-        try:
-            # Initialize conversation history if needed
-            if conversation_id not in self.conversation_history:
-                self.conversation_history[conversation_id] = []
-            
-            # Build context for the current message
-            context = await self.context_builder.build_shopping_context(
-                user_query=message,
-                user_id=user_id,
-                max_products=3
-            )
-            
-            # Create conversation prompt
-            conversation_prompt = self._create_conversation_prompt(
-                message, 
-                self.conversation_history[conversation_id],
-                context
-            )
-            
-            # Generate response
-            response = ollama.chat(
-                model=self.model_name,
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are RetailMate, a friendly AI shopping assistant. Engage in natural conversation while helping with shopping needs. Keep responses conversational and helpful."
-                    },
-                    {
-                        "role": "user",
-                        "content": conversation_prompt
-                    }
-                ],
-                options={
-                    "temperature": 0.8,
-                    "max_tokens": 300
+        """Handle conversational chat about shopping, including cart and calendar context"""
+        # Initialize conversation history if needed
+        if conversation_id not in self.conversation_history:
+            self.conversation_history[conversation_id] = []
+        # Build RAG context for shopping
+        context = await self.context_builder.build_shopping_context(
+            user_query=message,
+            user_id=user_id,
+            max_products=3
+        )
+        # Fetch cart summary (use "default" for anonymous sessions)
+        cart_summary = await self.cart_service.get_cart_summary(user_id or "default")
+        calendar_client = CalendarClient()
+        events = await calendar_client.get_upcoming_events()
+        # Create conversation prompt including all contexts
+        conversation_prompt = self._create_conversation_prompt(
+            message,
+            self.conversation_history[conversation_id],
+            context,
+            cart_summary,
+            events
+        )
+        
+        # Generate response
+        response = ollama.chat(
+            model=self.model_name,
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are RetailMate, a friendly AI shopping assistant. Engage in natural conversation while helping with shopping needs. Keep responses conversational and helpful."
+                },
+                {
+                    "role": "user",
+                    "content": conversation_prompt
                 }
-            )
-            
-            # Update conversation history
-            self.conversation_history[conversation_id].append({
-                "role": "user",
-                "content": message
-            })
-            self.conversation_history[conversation_id].append({
-                "role": "assistant",
-                "content": response['message']['content']
-            })
-            
-            # Keep only last 10 messages
-            if len(self.conversation_history[conversation_id]) > 10:
-                self.conversation_history[conversation_id] = self.conversation_history[conversation_id][-10:]
-            
-            chat_response = {
-                "conversation_id": conversation_id,
-                "user_message": message,
-                "ai_response": response['message']['content'],
-                "context_products": context["product_recommendations"][:2],
-                "conversation_length": len(self.conversation_history[conversation_id])
+            ],
+            options={
+                "temperature": 0.8,
+                "max_tokens": 300
             }
-            
-            logger.info(f"Generated chat response for conversation: {conversation_id}")
-            return chat_response
-            
-        except Exception as e:
-            logger.error(f"Error in chat conversation: {e}")
-            raise
+        )
+        
+        # Update conversation history
+        self.conversation_history[conversation_id].append({
+            "role": "user",
+            "content": message
+        })
+        self.conversation_history[conversation_id].append({
+            "role": "assistant",
+            "content": response['message']['content']
+        })
+        
+        # Keep only last 10 messages
+        if len(self.conversation_history[conversation_id]) > 10:
+            self.conversation_history[conversation_id] = self.conversation_history[conversation_id][-10:]
+        
+        chat_response = {
+            "conversation_id": conversation_id,
+            "user_message": message,
+            "ai_response": response['message']['content'],
+            "context_products": context["product_recommendations"][:2],
+            "conversation_length": len(self.conversation_history[conversation_id])
+        }
+        
+        logger.info(f"Generated chat response for conversation: {conversation_id}")
+        return chat_response
     
-    def _create_conversation_prompt(self, message: str, history: List[Dict], context: Dict) -> str:
-        """Create prompt for conversational interaction"""
-        # Format conversation history
+    def _create_conversation_prompt(self, message: str, history: List[Dict], context: Dict, cart_summary: Dict[str, Any], events: List[Dict]) -> str:
+        """Create prompt for conversational interaction with history, product, cart, and calendar contexts"""
+        # Conversation history
         history_text = ""
         if history:
-            recent_history = history[-4:]  # Last 4 messages
-            for msg in recent_history:
-                role = "User" if msg["role"] == "user" else "RetailMate"
-                history_text += f"{role}: {msg['content']}\n"
-        
-        # Format current context
+            for msg in history[-4:]:
+                sender = "User" if msg["role"] == "user" else "RetailMate"
+                history_text += f"{sender}: {msg['content']}\n"
+        # Cart context
+        if cart_summary and not cart_summary.get("empty", True):
+            cart_text = "CURRENT CART:\n"
+            cart_text += f"- Total Items: {cart_summary.get('total_items')}\n"
+            cart_text += f"- Estimated Total: ${cart_summary.get('estimated_total')}\n"
+            recent = cart_summary.get('recent_additions', [])
+            cart_text += f"- Recent Additions: {', '.join(recent)}\n"
+        else:
+            cart_text = "CURRENT CART: empty\n"
+        # Calendar context
+        if events:
+            events_text = "UPCOMING EVENTS:\n"
+            for e in events[:3]:
+                events_text += f"- {e['title']} in {e['days_until']} days\n"
+        else:
+            events_text = "UPCOMING EVENTS: none\n"
+        # Product recommendations
         context_text = ""
-        if context["product_recommendations"]:
+        if context.get("product_recommendations"):
             context_text = "RELEVANT PRODUCTS:\n"
             for i, product in enumerate(context["product_recommendations"][:3], 1):
                 context_text += f"{i}. {product['title']} - ${product['price']}\n"
-        
+        # Build final prompt
         prompt = f"""
 CONVERSATION HISTORY:
 {history_text}
-
+{cart_text}
+{events_text}
 CURRENT MESSAGE: {message}
 
 {context_text}
 
-Respond naturally to the user's message, incorporating relevant product information when helpful.
+Respond naturally, incorporating relevant context (cart items, upcoming events, and product suggestions) to assist the user.
 """
         return prompt
+    
+    async def interpret_and_act(self, message: str, conversation_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+        """Interpret user message into action and reply using rule-based commands and AI classification."""
+        lower_msg = message.strip().lower()
+        # Suggest based on last fetched event
+        if "suggest" in lower_msg and any(kw in lower_msg for kw in ["that event", "for my next event", "based on my next event", "for that"]):
+            if self.last_event_id:
+                return {"reply": f"Fetching shopping suggestions for event {self.last_event_id}.", "action": {"type": "suggest_for_event", "event_id": self.last_event_id}}
+            return {"reply": "I don't have an event to suggest for. Please ask for your next event first.", "action": {"type": "none"}}
+        if "next event" in lower_msg:
+            calendar_client = CalendarClient()
+            events = await calendar_client.get_upcoming_events()
+            if events:
+                e = events[0]
+                # Remember for follow-up suggestions
+                self.last_event_id = e['id']
+                return {"reply": f"Your next event is {e['title']} on {e['start_date']} ({e['days_until']} days away).", "action": {"type": "next_event"}}
+            # Clear last_event if none
+            self.last_event_id = None
+            return {"reply": "You have no upcoming events.", "action": {"type": "next_event"}}
+        if "calendar" in lower_msg or "upcoming events" in lower_msg:
+            return {"reply": "Here are your upcoming events:", "action": {"type": "list_events"}}
+        # Inline cart commands
+        if lower_msg.startswith("add to cart"):
+            parts = message.split()
+            if len(parts) >= 4:
+                product_id = parts[3]
+                quantity = int(parts[4]) if len(parts) >= 5 and parts[4].isdigit() else 1
+                return {"reply": f"Adding {quantity}x {product_id} to your cart.", "action": {"type": "add_to_cart", "product_id": product_id, "quantity": quantity}}
+            return {"reply": "Usage: add to cart <product_id> [quantity]", "action": {"type": "none"}}
+        if lower_msg.startswith("remove from cart"):
+            parts = message.split()
+            if len(parts) >= 4:
+                product_id = parts[3]
+                quantity = int(parts[4]) if len(parts) >= 5 and parts[4].isdigit() else None
+                return {"reply": f"Removing {quantity or 'all'} of {product_id} from your cart.", "action": {"type": "remove_from_cart", "product_id": product_id, "quantity": quantity}}
+            return {"reply": "Usage: remove from cart <product_id> [quantity]", "action": {"type": "none"}}
+        if lower_msg in ("show cart", "view cart"):
+            return {"reply": "Here is your current cart.", "action": {"type": "show_cart"}}
+        if lower_msg.startswith("list events"):
+            return {"reply": "Listing your upcoming events.", "action": {"type": "list_events"}}
+        if lower_msg.startswith("suggest for event"):
+            parts = message.split()
+            if len(parts) >= 4:
+                event_id = parts[3]
+                return {"reply": f"Fetching shopping suggestions for event {event_id}.", "action": {"type": "suggest_for_event", "event_id": event_id}}
+            return {"reply": "Usage: suggest for event <event_id>", "action": {"type": "none"}}
+        # Generic shopping requests: need/find/search/recommend
+        if any(lower_msg.startswith(prefix) for prefix in ("need ", "find ", "search ", "recommend ")):
+            return {"reply": f"Searching for \"{message}\"...", "action": {"type": "search", "query": message}}
+        # Fallback to AI classification
+        classification_str = classify_user_query(message)
+        try:
+            classification = json.loads(classification_str)
+        except Exception:
+            classification = {}
+        act = classification.get("action")
+        # Map classification to actions
+        if act in ("recommend", "search", "deal_lookup"):
+            return {"reply": f"Searching for \"{message}\"...", "action": {"type": "search", "query": message}}
+        if act == "reorder":
+            return {"reply": "Which product would you like to reorder? Please specify the product ID.", "action": {"type": "clarify", "clarification": "Please provide a product ID to reorder."}}
+        if act in ("assistant_help", "explain"):
+            return {"reply": "I can help you shop, manage your cart, and view upcoming events. What can I do for you?", "action": {"type": "none"}}
+        # Default fallback: hand off to normal chat_conversation with no initial reply
+        return {"action": {"type": "none"}}
     
     def get_model_status(self) -> Dict[str, Any]:
         """Get status of the Ollama model"""
