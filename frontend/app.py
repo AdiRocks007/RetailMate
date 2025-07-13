@@ -4,13 +4,19 @@ import plotly.express as px
 from datetime import datetime, timedelta
 import pandas as pd
 import warnings
+import requests
+import json
+import asyncio
+import aiohttp
+from typing import Dict, List, Optional
 
 # Suppress specific deprecation warnings
 warnings.filterwarnings('ignore', category=FutureWarning, module='_plotly_utils')
 warnings.filterwarnings('ignore', category=FutureWarning, module='pandas')
 
-# Or suppress all FutureWarnings if you prefer (less specific)
-# warnings.filterwarnings('ignore', category=FutureWarning)
+# Backend API Configuration
+API_BASE_URL = "http://localhost:8000"  # Change this to your backend URL
+API_TIMEOUT = 10
 
 # Page configuration
 st.set_page_config(
@@ -20,9 +26,119 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize session state for cart
+# Initialize session state
 if 'cart_items' not in st.session_state:
     st.session_state.cart_items = []
+if 'user_id' not in st.session_state:
+    st.session_state.user_id = "demo_user_123"  # In production, get from auth
+if 'conversation_id' not in st.session_state:
+    st.session_state.conversation_id = None
+if 'backend_connected' not in st.session_state:
+    st.session_state.backend_connected = False
+
+# Backend API Functions
+class BackendAPI:
+    @staticmethod
+    def check_backend_health():
+        """Check if backend is running"""
+        try:
+            response = requests.get(f"{API_BASE_URL}/health", timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+    
+    @staticmethod
+    def get_cart_contents(user_id: str) -> Dict:
+        """Get cart contents from backend"""
+        try:
+            response = requests.get(f"{API_BASE_URL}/cart/{user_id}", timeout=API_TIMEOUT)
+            if response.status_code == 200:
+                return response.json()
+            return {"items": [], "total": 0}
+        except Exception as e:
+            st.error(f"Error fetching cart: {e}")
+            return {"items": [], "total": 0}
+    
+    @staticmethod
+    def add_to_cart(user_id: str, product_id: str, quantity: int = 1) -> Dict:
+        """Add item to cart via backend"""
+        try:
+            payload = {
+                "product_id": product_id,
+                "quantity": quantity
+            }
+            response = requests.post(
+                f"{API_BASE_URL}/cart/{user_id}/add",
+                json=payload,
+                timeout=API_TIMEOUT
+            )
+            return response.json() if response.status_code == 200 else {"success": False}
+        except Exception as e:
+            st.error(f"Error adding to cart: {e}")
+            return {"success": False}
+    
+    @staticmethod
+    def get_cart_summary(user_id: str) -> Dict:
+        """Get cart summary from backend"""
+        try:
+            response = requests.get(f"{API_BASE_URL}/cart/{user_id}/summary", timeout=API_TIMEOUT)
+            if response.status_code == 200:
+                return response.json()
+            return {"total_items": 0, "total_value": 0}
+        except Exception as e:
+            return {"total_items": 0, "total_value": 0}
+    
+    @staticmethod
+    def get_shopping_recommendations(query: str, user_id: str) -> Dict:
+        """Get shopping recommendations from backend"""
+        try:
+            payload = {
+                "query": query,
+                "user_id": user_id
+            }
+            response = requests.post(
+                f"{API_BASE_URL}/shopping/recommend",
+                json=payload,
+                timeout=API_TIMEOUT
+            )
+            return response.json() if response.status_code == 200 else {"recommended_products": []}
+        except Exception as e:
+            st.error(f"Error getting recommendations: {e}")
+            return {"recommended_products": []}
+    
+    @staticmethod
+    def chat_with_ai(message: str, user_id: str, conversation_id: str = None) -> Dict:
+        """Chat with AI backend"""
+        try:
+            payload = {
+                "message": message,
+                "user_id": user_id,
+                "conversation_id": conversation_id
+            }
+            response = requests.post(
+                f"{API_BASE_URL}/chat",
+                json=payload,
+                timeout=API_TIMEOUT
+            )
+            return response.json() if response.status_code == 200 else {"ai_response": "Sorry, I'm having trouble connecting."}
+        except Exception as e:
+            st.error(f"Error chatting with AI: {e}")
+            return {"ai_response": "Sorry, I'm having trouble connecting."}
+    
+    @staticmethod
+    def get_upcoming_events() -> List[Dict]:
+        """Get upcoming calendar events"""
+        try:
+            response = requests.get(f"{API_BASE_URL}/calendar/events", timeout=API_TIMEOUT)
+            if response.status_code == 200:
+                return response.json().get("events", [])
+            return []
+        except Exception as e:
+            return []
+
+# Check backend connection
+api = BackendAPI()
+st.session_state.backend_connected = api.check_backend_health()
 
 # Custom CSS for beautiful styling
 st.markdown("""
@@ -62,7 +178,7 @@ st.markdown("""
         color: white;
         text-align: center;
         box-shadow: 0 6px 25px rgba(0,0,0,0.15);
-        height: 220px; /* Fixed height for uniformity */
+        height: 220px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -109,32 +225,54 @@ st.markdown("""
         box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     }
     
-    .add-to-cart-btn {
-        background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
-        color: white;
-        border: none;
+    .backend-status {
+        padding: 0.5rem 1rem;
         border-radius: 20px;
-        padding: 0.5rem 1.5rem;
-        font-weight: bold;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-        width: 100%;
-    }
-    
-    .cart-badge {
-        background: #ff6b6b;
-        color: white;
-        border-radius: 50%;
-        padding: 0.2rem 0.6rem;
         font-size: 0.8rem;
         font-weight: bold;
+        margin: 0.5rem 0;
+    }
+    
+    .status-connected {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-disconnected {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .ai-chat-container {
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin: 1rem 0;
+    }
+    
+    .event-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin: 0.5rem 0;
+        border-left: 4px solid #667eea;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Calculate cart totals for sidebar
-total_cart_items = len(st.session_state.cart_items)
-total_cart_value = sum(item.get('price', 0) * item.get('quantity', 1) for item in st.session_state.cart_items)
+# Get cart summary from backend
+if st.session_state.backend_connected:
+    cart_summary = api.get_cart_summary(st.session_state.user_id)
+    total_cart_items = cart_summary.get("total_items", 0)
+    total_cart_value = cart_summary.get("total_value", 0)
+else:
+    # Fallback to session state
+    total_cart_items = len(st.session_state.cart_items)
+    total_cart_value = sum(item.get('price', 0) * item.get('quantity', 1) for item in st.session_state.cart_items)
 
 # Sidebar styling
 st.sidebar.markdown("""
@@ -143,6 +281,21 @@ st.sidebar.markdown("""
     <p style="color: white; margin: 0; font-size: 0.9rem;">Smart Retail Management</p>
 </div>
 """, unsafe_allow_html=True)
+
+# Backend connection status
+if st.session_state.backend_connected:
+    st.sidebar.markdown("""
+    <div class="backend-status status-connected">
+        ✅ Backend Connected
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.sidebar.markdown("""
+    <div class="backend-status status-disconnected">
+        ❌ Backend Disconnected
+    </div>
+    """, unsafe_allow_html=True)
+    st.sidebar.warning("Some features may be limited without backend connection")
 
 # Cart summary in sidebar
 if total_cart_items > 0:
@@ -154,6 +307,31 @@ if total_cart_items > 0:
     """, unsafe_allow_html=True)
 else:
     st.sidebar.info("🛒 Your cart is empty")
+
+# AI Chat in sidebar
+st.sidebar.markdown("### 💬 Quick AI Chat")
+with st.sidebar.expander("Chat with AI Assistant"):
+    user_message = st.text_input("Ask me anything...", placeholder="e.g., Show me laptops under $1000")
+    if st.button("Send Message"):
+        if user_message and st.session_state.backend_connected:
+            with st.spinner("AI is thinking..."):
+                chat_response = api.chat_with_ai(
+                    user_message,
+                    st.session_state.user_id,
+                    st.session_state.conversation_id
+                )
+                st.session_state.conversation_id = chat_response.get("conversation_id")
+                st.success("AI Response:")
+                st.write(chat_response.get("ai_response", "No response"))
+                
+                # Show recommended products if any
+                recommended = chat_response.get("recommended_products", [])
+                if recommended:
+                    st.write("**Recommended Products:**")
+                    for product in recommended[:3]:  # Show first 3
+                        st.write(f"• {product.get('name', 'Unknown')} - ${product.get('price', 0):.2f}")
+        elif not st.session_state.backend_connected:
+            st.error("Backend not connected. Please check your connection.")
 
 st.sidebar.success("🎯 Choose a page above to get started!")
 
@@ -172,7 +350,13 @@ if st.sidebar.button("🛒 View Cart"):
     st.switch_page("pages/cart.py")
 
 if st.sidebar.button("🔍 Search Products"):
-    st.info("Search functionality coming soon!")
+    search_query = st.sidebar.text_input("Search for products...")
+    if search_query and st.session_state.backend_connected:
+        recommendations = api.get_shopping_recommendations(search_query, st.session_state.user_id)
+        if recommendations.get("recommended_products"):
+            st.sidebar.success(f"Found {len(recommendations['recommended_products'])} products!")
+        else:
+            st.sidebar.warning("No products found")
 
 # Main content
 st.markdown("""
@@ -217,6 +401,20 @@ with col4:
     </div>
     """, unsafe_allow_html=True)
 
+# Show upcoming events if backend is connected
+if st.session_state.backend_connected:
+    events = api.get_upcoming_events()
+    if events:
+        st.markdown("### 📅 Upcoming Events")
+        for event in events[:3]:  # Show first 3 events
+            st.markdown(f"""
+            <div class="event-card">
+                <h4>{event.get('title', 'Event')}</h4>
+                <p>📅 {event.get('date', 'No date')} | 🕐 {event.get('time', 'No time')}</p>
+                <p>{event.get('description', 'No description')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
 # Quick stats section
 st.markdown("### 📈 Quick Overview")
 
@@ -253,10 +451,10 @@ with col4:
 # Featured Products Section
 st.markdown("### 🌟 Featured Products")
 
-# Sample product data
+# Sample product data - in production, this would come from your backend
 featured_products = [
     {
-        'id': 1,
+        'id': 'prod_1',
         'name': 'iPhone 14 Pro',
         'price': 999.99,
         'image': '📱',
@@ -265,7 +463,7 @@ featured_products = [
         'description': 'Latest iPhone with Pro camera system'
     },
     {
-        'id': 2,
+        'id': 'prod_2',
         'name': 'AirPods Pro',
         'price': 249.99,
         'image': '🎧',
@@ -274,7 +472,7 @@ featured_products = [
         'description': 'Active noise cancellation wireless earbuds'
     },
     {
-        'id': 3,
+        'id': 'prod_3',
         'name': 'MacBook Air M2',
         'price': 1199.99,
         'image': '💻',
@@ -283,7 +481,7 @@ featured_products = [
         'description': 'Lightweight laptop with M2 chip'
     },
     {
-        'id': 4,
+        'id': 'prod_4',
         'name': 'iPad Pro',
         'price': 799.99,
         'image': '📱',
@@ -314,29 +512,89 @@ for i, product in enumerate(featured_products):
         
         # Add to cart button
         if st.button(f"🛒 Add to Cart", key=f"add_product_{product['id']}"):
-            # Check if product already in cart
-            existing_item = next((item for item in st.session_state.cart_items if item['id'] == product['id']), None)
-            
-            if existing_item:
-                # Increase quantity if already in cart
-                existing_item['quantity'] += 1
-                st.success(f"Updated {product['name']} quantity in cart!")
+            if st.session_state.backend_connected:
+                # Add to cart via backend
+                result = api.add_to_cart(st.session_state.user_id, product['id'], 1)
+                if result.get("success", False):
+                    st.success(f"Added {product['name']} to cart!")
+                    st.rerun()
+                else:
+                    st.error("Failed to add item to cart")
             else:
-                # Add new item to cart
-                cart_item = {
-                    'id': product['id'],
-                    'name': product['name'],
-                    'price': product['price'],
-                    'quantity': 1,
-                    'image': product['image'],
-                    'category': product['category'],
-                    'description': product['description']
-                }
-                st.session_state.cart_items.append(cart_item)
-                st.success(f"Added {product['name']} to cart!")
-            
-            # Show cart update notification
-            st.rerun()
+                # Fallback to session state
+                existing_item = next((item for item in st.session_state.cart_items if item['id'] == product['id']), None)
+                
+                if existing_item:
+                    existing_item['quantity'] += 1
+                    st.success(f"Updated {product['name']} quantity in cart!")
+                else:
+                    cart_item = {
+                        'id': product['id'],
+                        'name': product['name'],
+                        'price': product['price'],
+                        'quantity': 1,
+                        'image': product['image'],
+                        'category': product['category'],
+                        'description': product['description']
+                    }
+                    st.session_state.cart_items.append(cart_item)
+                    st.success(f"Added {product['name']} to cart!")
+                
+                st.rerun()
+
+# AI Recommendations Section
+if st.session_state.backend_connected:
+    st.markdown("### 🤖 AI Recommendations")
+    
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        recommendation_query = st.text_input(
+            "What are you looking for?",
+            placeholder="e.g., I need a laptop for work, budget under $1500"
+        )
+    
+    with col2:
+        if st.button("Get Recommendations", type="primary"):
+            if recommendation_query:
+                with st.spinner("AI is finding the best products for you..."):
+                    recommendations = api.get_shopping_recommendations(
+                        recommendation_query,
+                        st.session_state.user_id
+                    )
+                    
+                    recommended_products = recommendations.get("recommended_products", [])
+                    ai_response = recommendations.get("ai_response", "")
+                    
+                    if ai_response:
+                        st.success("AI Response:")
+                        st.write(ai_response)
+                    
+                    if recommended_products:
+                        st.markdown("**Recommended Products:**")
+                        for product in recommended_products[:4]:  # Show first 4
+                            col_prod1, col_prod2, col_prod3 = st.columns([1, 3, 1])
+                            
+                            with col_prod1:
+                                st.write(product.get('emoji', '📦'))
+                            
+                            with col_prod2:
+                                st.write(f"**{product.get('name', 'Unknown Product')}**")
+                                st.write(f"${product.get('price', 0):.2f}")
+                                st.write(product.get('description', 'No description'))
+                            
+                            with col_prod3:
+                                if st.button("Add", key=f"rec_{product.get('id', 'unknown')}"):
+                                    result = api.add_to_cart(
+                                        st.session_state.user_id,
+                                        product.get('id', 'unknown'),
+                                        1
+                                    )
+                                    if result.get("success", False):
+                                        st.success("Added to cart!")
+                                        st.rerun()
+                    else:
+                        st.info("No specific product recommendations available.")
 
 # Recent activity
 st.markdown("### 📋 Recent Activity")
@@ -366,40 +624,50 @@ if total_cart_items > 0:
     
     col1, col2 = st.columns(2)
     
-    with col1:
-        # Cart items chart
-        cart_df = pd.DataFrame(st.session_state.cart_items)
-        fig_cart = px.bar(
-            cart_df,
-            x='name',
-            y='quantity',
-            title='Items in Cart',
-            color='quantity',
-            color_continuous_scale='Viridis'
-        )
-        fig_cart.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#333')
-        )
-        st.plotly_chart(fig_cart, use_container_width=True)
+    # Get cart data for analytics
+    if st.session_state.backend_connected:
+        cart_data = api.get_cart_contents(st.session_state.user_id)
+        cart_items = cart_data.get("items", [])
+    else:
+        cart_items = st.session_state.cart_items
     
-    with col2:
-        # Cart value distribution
-        cart_df['total_value'] = cart_df['price'] * cart_df['quantity']
-        fig_pie = px.pie(
-            cart_df,
-            values='total_value',
-            names='name',
-            title='Cart Value Distribution',
-            color_discrete_sequence=px.colors.qualitative.Set3
-        )
-        fig_pie.update_layout(
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='#333')
-        )
-        st.plotly_chart(fig_pie, use_container_width=True)
+    if cart_items:
+        with col1:
+            # Cart items chart
+            cart_df = pd.DataFrame(cart_items)
+            if not cart_df.empty and 'name' in cart_df.columns and 'quantity' in cart_df.columns:
+                fig_cart = px.bar(
+                    cart_df,
+                    x='name',
+                    y='quantity',
+                    title='Items in Cart',
+                    color='quantity',
+                    color_continuous_scale='Viridis'
+                )
+                fig_cart.update_layout(
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#333')
+                )
+                st.plotly_chart(fig_cart, use_container_width=True)
+        
+        with col2:
+            # Cart value distribution
+            if not cart_df.empty and 'price' in cart_df.columns:
+                cart_df['total_value'] = cart_df['price'] * cart_df['quantity']
+                fig_pie = px.pie(
+                    cart_df,
+                    values='total_value',
+                    names='name',
+                    title='Cart Value Distribution',
+                    color_discrete_sequence=px.colors.qualitative.Set3
+                )
+                fig_pie.update_layout(
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color='#333')
+                )
+                st.plotly_chart(fig_pie, use_container_width=True)
 
 # Sales performance chart
 st.markdown("### 📈 Sales Performance")
@@ -434,9 +702,10 @@ st.plotly_chart(fig_sales, use_container_width=True)
 
 # Footer
 st.markdown("---")
-st.markdown("""
+backend_status = "✅ Connected" if st.session_state.backend_connected else "❌ Disconnected"
+st.markdown(f"""
 <div style="text-align: center; padding: 2rem; color: #666;">
     <p>🚀 RetailMate v1.0 - Empowering Your Retail Business</p>
-    <p>Built with ❤ using Streamlit | 🛒 Cart: {total_items} items (${total_value:.2f})</p>
+    <p>Built with ❤ using Streamlit | 🛒 Cart: {total_cart_items} items (${total_cart_value:.2f}) | Backend: {backend_status}</p>
 </div>
-""".format(total_items=total_cart_items, total_value=total_cart_value), unsafe_allow_html=True)
+""", unsafe_allow_html=True)
