@@ -1,15 +1,15 @@
 ﻿# Core Framework
-fastapi==0.104.1
+fastapi>=0.104.1
 uvicorn[standard]==0.24.0
 streamlit==1.28.1
 python-dotenv==1.0.0
 
 # Ollama Integration
-ollama==0.1.7
+ollama>=0.1.8
 requests==2.31.0
 
 # AI/ML - CPU Optimized
-langchain==0.0.335
+langchain>=0.0.335
 chromadb==0.4.18
 sentence-transformers
 
@@ -23,7 +23,7 @@ textblob==0.17.1
 
 # Database
 sqlalchemy==2.0.23
-pydantic==2.5.0
+pydantic>=2.5.0
 
 # Google Calendar
 google-auth==2.23.4
@@ -33,3 +33,10 @@ google-api-python-client==2.108.0
 # Utilities
 python-multipart==0.0.6
 plotly==5.17.0
+
+outlines==0.0.37
+aiohttp==3.9.1
+python-json-logger==2.0.7
+mcp==1.0.0
+
+aiofiles>=23.0.0

@@ -64,3 +64,5 @@ node_modules/
 *.tmp
 *.temp
 
+venv/
+
