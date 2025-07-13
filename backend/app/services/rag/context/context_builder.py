@@ -227,3 +227,48 @@ class ContextBuilder:
         except Exception as e:
             logger.error(f"Error formatting context for LLM: {e}")
             return f"Error formatting context: {str(e)}"
+
+    async def get_product_details(self, product_id: str) -> List[Dict]:
+        """Get detailed information about a specific product"""
+        try:
+            # Get product details from ChromaDB by ID
+            products_collection = self.vector_store.get_or_create_products_collection()
+            product_data = products_collection.get(
+                ids=[product_id], 
+                include=["metadatas", "documents"]
+            )
+            
+            if product_data["ids"]:
+                product_info = {
+                    "id": product_id,
+                    "metadata": product_data["metadatas"][0],
+                    "description": product_data["documents"][0]
+                }
+                return [product_info]
+            
+            # If not found by ID, try searching by title/description
+            # This is a fallback in case the ID search doesn't work
+            return []
+            
+        except Exception as e:
+            logger.error(f"Error getting product details: {e}")
+            return []
+
+    async def search_products(self, query: str, max_results: int = 5) -> List[Dict]:
+        """Search for products by query"""
+        try:
+            # Generate query embedding
+            self.embedding_service.load_model()
+            query_embedding = self.embedding_service.model.encode([query])[0]
+            
+            # Search products using vector store
+            results = self.vector_store.search_products(
+                query_embedding=query_embedding,
+                n_results=max_results
+            )
+            
+            return results["products"]
+            
+        except Exception as e:
+            logger.error(f"Error searching products: {e}")
+            return []
