@@ -21,7 +21,7 @@ class RetailMateAPI {
     // Generic fetch wrapper with error handling
     async makeRequest(endpoint, options = {}) {
         try {
-            const response = await fetch(${this.baseURL}${endpoint}, {
+            const response = await fetch(`${this.baseURL}${endpoint}`, {
                 headers: {
                     'Content-Type': 'application/json',
                     ...options.headers
@@ -30,7 +30,7 @@ class RetailMateAPI {
             });
 
             if (!response.ok) {
-                throw new Error(HTTP error! status: ${response.status});
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             return await response.json();
@@ -85,22 +85,22 @@ class RetailMateAPI {
 
     // Event shopping advice
     async getEventShoppingAdvice(eventId) {
-        return await this.makeRequest(/events/${eventId}/shopping-advice, {
+        return await this.makeRequest(`/events/${eventId}/shopping-advice`, {
             method: 'POST'
         });
     }
 
     // Cart management
     async getCart() {
-        return await this.makeRequest(/cart/${this.userId});
+        return await this.makeRequest(`/cart/${this.userId}`);
     }
 
     async getCartSummary() {
-        return await this.makeRequest(/cart/${this.userId}/summary);
+        return await this.makeRequest(`/cart/${this.userId}/summary`);
     }
 
     async addToCart(productId, quantity = 1) {
-        return await this.makeRequest(/cart/${this.userId}/add, {
+        return await this.makeRequest(`/cart/${this.userId}/add`, {
             method: 'POST',
             body: JSON.stringify({
                 product_id: productId,
@@ -110,7 +110,7 @@ class RetailMateAPI {
     }
 
     async removeFromCart(productId, quantity = 1) {
-        return await this.makeRequest(/cart/${this.userId}/remove, {
+        return await this.makeRequest(`/cart/${this.userId}/remove`, {
             method: 'POST',
             body: JSON.stringify({
                 product_id: productId,
@@ -120,13 +120,13 @@ class RetailMateAPI {
     }
 
     async clearCart() {
-        return await this.makeRequest(/cart/${this.userId}/clear, {
+        return await this.makeRequest(`/cart/${this.userId}/clear`, {
             method: 'DELETE'
         });
     }
 
     async getCartSuggestions() {
-        return await this.makeRequest(/cart/${this.userId}/suggestions);
+        return await this.makeRequest(`/cart/${this.userId}/suggestions`);
     }
 
     // Calendar
@@ -135,20 +135,20 @@ class RetailMateAPI {
     }
 
     async getEventDetails(eventId) {
-        return await this.makeRequest(/calendar/events/${eventId});
+        return await this.makeRequest(`/calendar/events/${eventId}`);
     }
 
     // Conversation management
     async getConversationHistory(conversationId = null) {
         const id = conversationId || this.conversationId;
         if (!id) throw new Error('No conversation ID available');
-        return await this.makeRequest(/conversations/${id});
+        return await this.makeRequest(`/conversations/${id}`);
     }
 
     async clearConversation(conversationId = null) {
         const id = conversationId || this.conversationId;
         if (!id) throw new Error('No conversation ID available');
-        return await this.makeRequest(/conversations/${id}, {
+        return await this.makeRequest(`/conversations/${id}`, {
             method: 'DELETE'
         });
     }

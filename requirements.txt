@@ -26,6 +26,7 @@ textblob==0.17.1
 # Database
 sqlalchemy==2.0.23
 pydantic>=2.5.0
+pydantic-settings>=2.10.1
 
 # Google Calendar
 google-auth==2.23.4

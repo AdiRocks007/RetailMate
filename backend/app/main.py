@@ -6,7 +6,8 @@ Exposes OllamaService and CartService as REST APIs
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, BaseSettings
+from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 from typing import Optional, Dict, Any, List
 import uuid
 import asyncio
@@ -32,6 +33,7 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        extra = "allow"
 
 settings = Settings()
 
@@ -512,7 +514,7 @@ async def clear_conversation(conversation_id: str):
     raise HTTPException(status_code=404, detail="Conversation not found")
 
 # Run the server
-if __name__ == "__main__":
+if __name__ == "_main_":
     import uvicorn
     uvicorn.run(
         "main:app",
