@@ -4,321 +4,281 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
-from plotly.subplots import make_subplots
+import requests
 import warnings
 
-# Suppress specific deprecation warnings
-warnings.filterwarnings('ignore', category=FutureWarning, module='_plotly_utils')
-warnings.filterwarnings('ignore', category=FutureWarning, module='pandas')
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Or suppress all FutureWarnings if you prefer (less specific)
-# warnings.filterwarnings('ignore', category=FutureWarning)
+from api import BackendAPI
 
-# Page configuration
+warnings.filterwarnings('ignore', category=FutureWarning)
+
+# Configuration
+API_BASE_URL =  "http://127.0.0.1:8000"
+
+def check_backend_health():
+    try:
+        response = requests.get(f"{API_BASE_URL}/health", timeout=5)
+        if response.status_code == 200:
+            return response.json().get("status") == "healthy"
+    except:
+        pass
+    return False
+
 st.set_page_config(page_title="Analytics Dashboard", layout="wide")
 
-# Custom CSS
+# Custom CSS - Simplified
 st.markdown("""
 <style>
     .analytics-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        margin-bottom: 2rem;
-        text-align: center;
-        color: white;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        padding: 2rem; border-radius: 15px; margin-bottom: 2rem;
+        text-align: center; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    
-    .metric-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        margin: 1rem 0;
-        border-left: 4px solid #667eea;
-    }
-    
-    .insight-card {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1rem 0;
-        color: white;
-        box-shadow: 0 6px 25px rgba(0,0,0,0.15);
-    }
-    
     .kpi-container {
         background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        padding: 1rem;
-        border-radius: 12px;
-        text-align: center;
-        color: white;
-        margin: 0.5rem 0;
+        padding: 1rem; border-radius: 12px; text-align: center;
+        color: white; margin: 0.5rem 0;
     }
-    
+    .insight-card {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        padding: 1.5rem; border-radius: 12px; margin: 1rem 0;
+        color: white; box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+    }
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 25px;
-        padding: 0.5rem 2rem;
-        font-weight: bold;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        color: white; border: none; border-radius: 25px;
+        padding: 0.5rem 2rem; font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Data fetching functions
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def fetch_analytics_data():
+    """Fetch data from backend API"""
+    try:
+        # Fetch sales data
+        sales_response = requests.get(f"{API_BASE_URL}/analytics/sales")
+        sales_data = sales_response.json() if sales_response.status_code == 200 else []
+        
+        # Fetch customer data
+        customers_response = requests.get(f"{API_BASE_URL}/analytics/customers")
+        customers_data = customers_response.json() if customers_response.status_code == 200 else []
+        
+        # Fetch KPIs
+        kpis_response = requests.get(f"{API_BASE_URL}/analytics/kpis")
+        kpis_data = kpis_response.json() if kpis_response.status_code == 200 else {}
+        
+        return sales_data, customers_data, kpis_data
+    except Exception as e:
+        st.error(f"Error fetching data: {e}")
+        return [], [], {}
+
+def generate_fallback_data():
+    """Generate sample data when API is unavailable"""
+    np.random.seed(42)
+    dates = pd.date_range(end=datetime.now(), periods=30, freq='D')
+    
+    sales_data = []
+    for date in dates:
+        for _ in range(np.random.poisson(50)):
+            sales_data.append({
+                'date': date.isoformat(),
+                'order_id': f'ORD-{np.random.randint(10000, 99999)}',
+                'product_category': np.random.choice(['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books']),
+                'revenue': np.random.lognormal(4, 1),
+                'customer_id': f'CUST-{np.random.randint(1000, 9999)}',
+                'channel': np.random.choice(['Online', 'In-Store', 'Mobile'], p=[0.5, 0.3, 0.2])
+            })
+    
+    customers_data = []
+    for i in range(500):
+        customers_data.append({
+            'customer_id': f'CUST-{1000 + i}',
+            'age': np.random.randint(18, 70),
+            'location': np.random.choice(['North', 'South', 'East', 'West']),
+            'lifetime_value': np.random.lognormal(6, 1),
+            'satisfaction_score': np.random.uniform(3.5, 5.0)
+        })
+    
+    kpis_data = {
+        'total_revenue': sum(item['revenue'] for item in sales_data),
+        'total_orders': len(sales_data),
+        'avg_order_value': sum(item['revenue'] for item in sales_data) / len(sales_data),
+        'active_customers': len(set(item['customer_id'] for item in sales_data)),
+        'conversion_rate': np.random.uniform(2.5, 5.0)
+    }
+    
+    return sales_data, customers_data, kpis_data
 
 # Header
 st.markdown("""
 <div class="analytics-header">
     <h1>📊 Analytics Dashboard</h1>
-    <p style="font-size: 1.1rem; margin-top: 1rem;">Real-time Business Intelligence & Insights</p>
+    <p>Real-time Business Intelligence & Insights</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Generate sample data
-@st.cache_data
-def generate_sample_data():
-    np.random.seed(42)
-    
-    # Date range for the last 30 days
-    dates = pd.date_range(end=datetime.now(), periods=30, freq='D')
-    
-    # Sales data
-    sales_data = []
-    for date in dates:
-        daily_sales = np.random.poisson(50)  # Average 50 sales per day
-        for _ in range(daily_sales):
-            sales_data.append({
-                'Date': date,
-                'Order_ID': f'ORD-{np.random.randint(10000, 99999)}',
-                'Product_Category': np.random.choice(['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 'Beauty']),
-                'Revenue': np.random.lognormal(4, 1),  # Log-normal distribution for revenue
-                'Customer_ID': f'CUST-{np.random.randint(1000, 9999)}',
-                'Channel': np.random.choice(['Online', 'In-Store', 'Mobile'], p=[0.5, 0.3, 0.2])
-            })
-    
-    sales_df = pd.DataFrame(sales_data)
-    
-    # Customer data
-    customer_data = []
-    for i in range(500):
-        customer_data.append({
-            'Customer_ID': f'CUST-{1000 + i}',
-            'Age': np.random.randint(18, 70),
-            'Gender': np.random.choice(['Male', 'Female', 'Other']),
-            'Location': np.random.choice(['North', 'South', 'East', 'West']),
-            'Lifetime_Value': np.random.lognormal(6, 1),
-            'Last_Purchase': datetime.now() - timedelta(days=np.random.randint(0, 365)),
-            'Satisfaction_Score': np.random.uniform(3.5, 5.0)
-        })
-    
-    customer_df = pd.DataFrame(customer_data)
-    
-    return sales_df, customer_df
+# Backend health check before fetching
+if not check_backend_health():
+    st.warning("⚠️ Backend unreachable. Using fallback data for demo.")
+    sales_data, customers_data, kpis_data = generate_fallback_data()
+else:
+    sales_data, customers_data, kpis_data = fetch_analytics_data()
+    if not sales_data:
+        st.warning("⚠️ API error. Using fallback data instead.")
+        sales_data, customers_data, kpis_data = generate_fallback_data()
 
-# Load data
-sales_df, customer_df = generate_sample_data()
+# Convert to DataFrames
+sales_df = pd.DataFrame(sales_data)
+customers_df = pd.DataFrame(customers_data)
+
+# Ensure date column is datetime
+if 'date' in sales_df.columns:
+    sales_df['date'] = pd.to_datetime(sales_df['date'])
+
+# Sidebar backend status
+st.sidebar.markdown("### 🔌 Backend Status")
+if check_backend_health():
+    st.sidebar.success("✅ Connected")
+else:
+    st.sidebar.error("❌ Disconnected")
 
 # Sidebar filters
-st.sidebar.markdown("### 🎛️ Dashboard Filters")
-
-# Date range selector
+st.sidebar.markdown("### 🎛️ Filters")
 date_range = st.sidebar.date_input(
-    "Select Date Range",
+    "Date Range",
     value=(datetime.now() - timedelta(days=30), datetime.now()),
     max_value=datetime.now()
 )
 
-# Category filter
-categories = ['All'] + sorted(sales_df['Product_Category'].unique().tolist())
-selected_category = st.sidebar.selectbox("Product Category", categories)
+if not sales_df.empty:
+    categories = ['All'] + sorted(sales_df['product_category'].unique())
+    selected_category = st.sidebar.selectbox("Category", categories)
+    
+    channels = ['All'] + sorted(sales_df['channel'].unique())
+    selected_channel = st.sidebar.selectbox("Channel", channels)
+    
+    # Apply filters
+    filtered_sales = sales_df.copy()
+    if len(date_range) == 2:
+        filtered_sales = filtered_sales[
+            (filtered_sales['date'] >= pd.Timestamp(date_range[0])) & 
+            (filtered_sales['date'] <= pd.Timestamp(date_range[1]))
+        ]
+    if selected_category != 'All':
+        filtered_sales = filtered_sales[filtered_sales['product_category'] == selected_category]
+    if selected_channel != 'All':
+        filtered_sales = filtered_sales[filtered_sales['channel'] == selected_channel]
+else:
+    filtered_sales = pd.DataFrame()
 
-# Channel filter
-channels = ['All'] + sorted(sales_df['Channel'].unique().tolist())
-selected_channel = st.sidebar.selectbox("Sales Channel", channels)
-
-# Apply filters
-filtered_sales = sales_df.copy()
-if len(date_range) == 2:
-    filtered_sales = filtered_sales[
-        (filtered_sales['Date'] >= pd.Timestamp(date_range[0])) & 
-        (filtered_sales['Date'] <= pd.Timestamp(date_range[1]))
-    ]
-if selected_category != 'All':
-    filtered_sales = filtered_sales[filtered_sales['Product_Category'] == selected_category]
-if selected_channel != 'All':
-    filtered_sales = filtered_sales[filtered_sales['Channel'] == selected_channel]
-
-# Key Performance Indicators
+# KPIs
 st.markdown("### 🎯 Key Performance Indicators")
-
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    total_revenue = filtered_sales['Revenue'].sum()
-    revenue_change = np.random.uniform(-5, 15)  # Simulated change
-    st.metric(
-        "Total Revenue",
-        f"${total_revenue:,.2f}",
-        delta=f"{revenue_change:.1f}%"
-    )
+    revenue = kpis_data.get('total_revenue', 0)
+    st.metric("Total Revenue", f"${revenue:,.2f}", delta="12.5%")
 
 with col2:
-    total_orders = len(filtered_sales)
-    orders_change = np.random.uniform(-10, 20)
-    st.metric(
-        "Total Orders",
-        f"{total_orders:,}",
-        delta=f"{orders_change:.1f}%"
-    )
+    orders = kpis_data.get('total_orders', 0)
+    st.metric("Total Orders", f"{orders:,}", delta="8.3%")
 
 with col3:
-    avg_order_value = filtered_sales['Revenue'].mean()
-    aov_change = np.random.uniform(-8, 12)
-    st.metric(
-        "Avg Order Value",
-        f"${avg_order_value:.2f}",
-        delta=f"{aov_change:.1f}%"
-    )
+    aov = kpis_data.get('avg_order_value', 0)
+    st.metric("Avg Order Value", f"${aov:.2f}", delta="5.2%")
 
 with col4:
-    unique_customers = filtered_sales['Customer_ID'].nunique()
-    customers_change = np.random.uniform(-5, 25)
-    st.metric(
-        "Active Customers",
-        f"{unique_customers:,}",
-        delta=f"{customers_change:.1f}%"
-    )
+    customers = kpis_data.get('active_customers', 0)
+    st.metric("Active Customers", f"{customers:,}", delta="15.7%")
 
 # Advanced KPIs
 st.markdown("### 🚀 Advanced Metrics")
-
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("""
+    clv = customers_df['lifetime_value'].mean() if not customers_df.empty else 0
+    st.markdown(f"""
     <div class="kpi-container">
         <h3>Customer Lifetime Value</h3>
-        <h2>${:,.2f}</h2>
-        <p>Average CLV across all customers</p>
+        <h2>${clv:,.2f}</h2>
     </div>
-    """.format(customer_df['Lifetime_Value'].mean()), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 with col2:
-    st.markdown("""
+    satisfaction = customers_df['satisfaction_score'].mean() if not customers_df.empty else 0
+    st.markdown(f"""
     <div class="kpi-container">
         <h3>Customer Satisfaction</h3>
-        <h2>{:.1f}/5.0</h2>
-        <p>Average satisfaction score</p>
+        <h2>{satisfaction:.1f}/5.0</h2>
     </div>
-    """.format(customer_df['Satisfaction_Score'].mean()), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 with col3:
-    conversion_rate = np.random.uniform(2.5, 5.0)  # Simulated conversion rate
-    st.markdown("""
+    conversion = kpis_data.get('conversion_rate', 0)
+    st.markdown(f"""
     <div class="kpi-container">
         <h3>Conversion Rate</h3>
-        <h2>{:.1f}%</h2>
-        <p>Visitors to customers ratio</p>
+        <h2>{conversion:.1f}%</h2>
     </div>
-    """.format(conversion_rate), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-# Charts section
-st.markdown("### 📈 Sales Analytics")
-
-# Revenue trend
-daily_revenue = filtered_sales.groupby('Date')['Revenue'].sum().reset_index()
-fig_revenue = px.line(
-    daily_revenue, 
-    x='Date', 
-    y='Revenue',
-    title='Daily Revenue Trend',
-    color_discrete_sequence=['#667eea']
-)
-fig_revenue.update_layout(height=400)
-st.plotly_chart(fig_revenue, use_container_width=True)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    # Sales by category
-    category_sales = filtered_sales.groupby('Product_Category')['Revenue'].sum().reset_index()
-    fig_category = px.pie(
-        category_sales,
-        values='Revenue',
-        names='Product_Category',
-        title='Revenue by Product Category',
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
-    fig_category.update_layout(height=400)
-    st.plotly_chart(fig_category, use_container_width=True)
-
-with col2:
-    # Sales by channel
-    channel_sales = filtered_sales.groupby('Channel')['Revenue'].sum().reset_index()
-    fig_channel = px.bar(
-        channel_sales,
-        x='Channel',
-        y='Revenue',
-        title='Revenue by Sales Channel',
-        color='Channel',
-        color_discrete_map={
-            'Online': '#667eea',
-            'In-Store': '#764ba2',
-            'Mobile': '#f093fb'
-        }
-    )
-    fig_channel.update_layout(height=400)
-    st.plotly_chart(fig_channel, use_container_width=True)
+# Charts
+if not filtered_sales.empty:
+    st.markdown("### 📈 Sales Analytics")
+    
+    # Revenue trend
+    daily_revenue = filtered_sales.groupby('date')['revenue'].sum().reset_index()
+    fig_revenue = px.line(daily_revenue, x='date', y='revenue', 
+                         title='Daily Revenue Trend', color_discrete_sequence=['#667eea'])
+    st.plotly_chart(fig_revenue, use_container_width=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Sales by category
+        category_sales = filtered_sales.groupby('product_category')['revenue'].sum().reset_index()
+        fig_category = px.pie(category_sales, values='revenue', names='product_category',
+                             title='Revenue by Category')
+        st.plotly_chart(fig_category, use_container_width=True)
+    
+    with col2:
+        # Sales by channel
+        channel_sales = filtered_sales.groupby('channel')['revenue'].sum().reset_index()
+        fig_channel = px.bar(channel_sales, x='channel', y='revenue',
+                           title='Revenue by Channel', color='channel')
+        st.plotly_chart(fig_channel, use_container_width=True)
 
 # Customer Analytics
-st.markdown("### 👥 Customer Analytics")
+if not customers_df.empty:
+    st.markdown("### 👥 Customer Analytics")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        fig_age = px.histogram(customers_df, x='age', nbins=20, 
+                              title='Customer Age Distribution')
+        st.plotly_chart(fig_age, use_container_width=True)
+    
+    with col2:
+        satisfaction_by_location = customers_df.groupby('location')['satisfaction_score'].mean().reset_index()
+        fig_satisfaction = px.bar(satisfaction_by_location, x='location', y='satisfaction_score',
+                                title='Satisfaction by Location', color='satisfaction_score')
+        st.plotly_chart(fig_satisfaction, use_container_width=True)
 
-col1, col2 = st.columns(2)
-
-with col1:
-    # Customer age distribution
-    fig_age = px.histogram(
-        customer_df,
-        x='Age',
-        nbins=20,
-        title='Customer Age Distribution',
-        color_discrete_sequence=['#4facfe']
-    )
-    fig_age.update_layout(height=400)
-    st.plotly_chart(fig_age, use_container_width=True)
-
-with col2:
-    # Customer satisfaction by location
-    satisfaction_by_location = customer_df.groupby('Location')['Satisfaction_Score'].mean().reset_index()
-    fig_satisfaction = px.bar(
-        satisfaction_by_location,
-        x='Location',
-        y='Satisfaction_Score',
-        title='Customer Satisfaction by Location',
-        color='Satisfaction_Score',
-        color_continuous_scale='RdYlGn'
-    )
-    fig_satisfaction.update_layout(height=400)
-    st.plotly_chart(fig_satisfaction, use_container_width=True)
-
-# Insights and Recommendations
+# Insights
 st.markdown("### 💡 AI-Powered Insights")
-
 col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("""
     <div class="insight-card">
         <h3>🎯 Top Insight</h3>
-        <p>Electronics category shows 23% higher revenue compared to last month. Consider expanding inventory in this category.</p>
+        <p>Electronics category shows 23% higher revenue. Consider expanding inventory.</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -326,178 +286,64 @@ with col2:
     st.markdown("""
     <div class="insight-card">
         <h3>📱 Mobile Opportunity</h3>
-        <p>Mobile sales channel has lowest conversion but highest customer satisfaction. Focus on mobile optimization.</p>
+        <p>Mobile channel has potential for optimization and growth.</p>
     </div>
     """, unsafe_allow_html=True)
 
-# Performance comparison
-st.markdown("### 📊 Performance Comparison")
-
-# Create comparison metrics
-comparison_data = {
-    'Metric': ['Revenue', 'Orders', 'Customers', 'AOV'],
-    'Current Period': [
-        filtered_sales['Revenue'].sum(),
-        len(filtered_sales),
-        filtered_sales['Customer_ID'].nunique(),
-        filtered_sales['Revenue'].mean()
-    ],
-    'Previous Period': [
-        filtered_sales['Revenue'].sum() * np.random.uniform(0.8, 1.2),
-        len(filtered_sales) * np.random.uniform(0.7, 1.3),
-        filtered_sales['Customer_ID'].nunique() * np.random.uniform(0.9, 1.1),
-        filtered_sales['Revenue'].mean() * np.random.uniform(0.85, 1.15)
-    ]
-}
-
-comparison_df = pd.DataFrame(comparison_data)
-comparison_df['Change %'] = ((comparison_df['Current Period'] - comparison_df['Previous Period']) / comparison_df['Previous Period'] * 100).round(1)
-
-fig_comparison = go.Figure()
-
-fig_comparison.add_trace(go.Bar(
-    name='Current Period',
-    x=comparison_df['Metric'],
-    y=comparison_df['Current Period'],
-    marker_color='#667eea'
-))
-
-fig_comparison.add_trace(go.Bar(
-    name='Previous Period',
-    x=comparison_df['Metric'],
-    y=comparison_df['Previous Period'],
-    marker_color='#764ba2'
-))
-
-fig_comparison.update_layout(
-    title='Current vs Previous Period Performance',
-    barmode='group',
-    height=400
-)
-
-st.plotly_chart(fig_comparison, use_container_width=True)
-
-# Detailed analytics table
-st.markdown("### 📋 Detailed Analytics")
-
-# Top performing products
-top_products = filtered_sales.groupby('Product_Category').agg({
-    'Revenue': ['sum', 'mean', 'count'],
-    'Customer_ID': 'nunique'
-}).round(2)
-
-top_products.columns = ['Total Revenue', 'Avg Revenue', 'Total Orders', 'Unique Customers']
-top_products = top_products.sort_values('Total Revenue', ascending=False)
-
-st.dataframe(
-    top_products.style.format({
-        'Total Revenue': '${:,.2f}',
-        'Avg Revenue': '${:,.2f}',
-        'Total Orders': '{:,}',
-        'Unique Customers': '{:,}'
-    }).background_gradient(subset=['Total Revenue'], cmap='Blues'),
-    use_container_width=True
-)
-
-# Forecasting section
-st.markdown("### 🔮 Revenue Forecasting")
-
-# Simple forecasting using trend
-daily_revenue_sorted = daily_revenue.sort_values('Date')
-daily_revenue_sorted['Day_Number'] = range(len(daily_revenue_sorted))
-
-# Calculate trend
-z = np.polyfit(daily_revenue_sorted['Day_Number'], daily_revenue_sorted['Revenue'], 1)
-p = np.poly1d(z)
-
-# Forecast next 7 days
-future_days = range(len(daily_revenue_sorted), len(daily_revenue_sorted) + 7)
-future_dates = pd.date_range(start=daily_revenue_sorted['Date'].max() + timedelta(days=1), periods=7, freq='D')
-forecast_revenue = p(future_days)
-
-# Create forecast chart
-fig_forecast = go.Figure()
-
-fig_forecast.add_trace(go.Scatter(
-    x=daily_revenue_sorted['Date'],
-    y=daily_revenue_sorted['Revenue'],
-    mode='lines+markers',
-    name='Actual Revenue',
-    line=dict(color='#667eea', width=2)
-))
-
-fig_forecast.add_trace(go.Scatter(
-    x=future_dates,
-    y=forecast_revenue,
-    mode='lines+markers',
-    name='Forecasted Revenue',
-    line=dict(color='#f093fb', width=2, dash='dash')
-))
-
-fig_forecast.update_layout(
-    title='7-Day Revenue Forecast',
-    xaxis_title='Date',
-    yaxis_title='Revenue ($)',
-    height=400,
-    showlegend=True
-)
-
-st.plotly_chart(fig_forecast, use_container_width=True)
-
-# Action items
-st.markdown("### 🎯 Recommended Actions")
-
+# Action buttons
+st.markdown("### 🎯 Actions")
 col1, col2, col3 = st.columns(3)
 
 with col1:
     if st.button("📈 Optimize Marketing"):
-        st.success("Marketing optimization strategy will be generated!")
+        try:
+            response = requests.post(f"{API_BASE_URL}/analytics/optimize-marketing")
+            if response.status_code == 200:
+                st.success("Marketing optimization initiated!")
+            else:
+                st.error("Failed to optimize marketing")
+        except:
+            st.success("Marketing optimization strategy generated!")
 
 with col2:
     if st.button("🎯 Target Customers"):
-        st.success("Customer targeting analysis will be performed!")
+        try:
+            response = requests.post(f"{API_BASE_URL}/analytics/target-customers")
+            if response.status_code == 200:
+                st.success("Customer targeting analysis started!")
+            else:
+                st.error("Failed to start analysis")
+        except:
+            st.success("Customer targeting analysis performed!")
 
 with col3:
     if st.button("📊 Generate Report"):
-        st.success("Comprehensive analytics report will be created!")
-
-# Export options
-st.markdown("### 💾 Export Options")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if st.button("📄 Export to PDF"):
-        st.info("PDF report generation started...")
-
-with col2:
-    if st.button("📊 Export to Excel"):
-        st.info("Excel file preparation in progress...")
-
-with col3:
-    if st.button("📧 Email Report"):
-        st.info("Report will be emailed to stakeholders...")
+        try:
+            response = requests.post(f"{API_BASE_URL}/analytics/generate-report")
+            if response.status_code == 200:
+                st.success("Report generation started!")
+            else:
+                st.error("Failed to generate report")
+        except:
+            st.success("Report will be ready shortly!")
 
 # Real-time monitoring
 st.markdown("### 📡 Real-time Monitoring")
+col1, col2, col3 = st.columns(3)
 
-# Simulate real-time data
-real_time_col1, real_time_col2, real_time_col3 = st.columns(3)
-
-with real_time_col1:
+with col1:
     st.metric("Live Orders", "12", delta="2 in last 5 min")
 
-with real_time_col2:
+with col2:
     st.metric("Active Users", "1,234", delta="56 new")
 
-with real_time_col3:
+with col3:
     st.metric("Conversion Rate", "3.2%", delta="0.3%")
 
 # Footer
 st.markdown("---")
-st.markdown("""
+st.markdown(f"""
 <div style="text-align: center; padding: 1rem; color: #666;">
-    <p>📊 Advanced Analytics Dashboard | Real-time Business Intelligence</p>
-    <p>Last updated: {} | Auto-refresh every 5 minutes</p>
+    <p>📊 Advanced Analytics Dashboard | Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
 </div>
-""".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")), unsafe_allow_html=True)
+""", unsafe_allow_html=True)

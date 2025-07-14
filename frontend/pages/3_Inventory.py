@@ -1,20 +1,68 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
-import numpy as np
+import requests
 import warnings
+from datetime import datetime
 
-# Suppress specific deprecation warnings
-warnings.filterwarnings('ignore', category=FutureWarning, module='_plotly_utils')
-warnings.filterwarnings('ignore', category=FutureWarning, module='pandas')
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Or suppress all FutureWarnings if you prefer (less specific)
-# warnings.filterwarnings('ignore', category=FutureWarning)
+from api import BackendAPI
+
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 # Page configuration
 st.set_page_config(page_title="Inventory Management", layout="wide")
+
+# API Configuration
+API_BASE_URL =  "http://127.0.0.1:8000"
+
+# Backend API functions
+def check_backend_health():
+    try:
+        response = requests.get(f"{API_BASE_URL}/health", timeout=5)
+        if response.status_code == 200:
+            return response.json().get("status") == "healthy"
+    except:
+        pass
+    return False
+
+# Backend API functions
+@st.cache_data(ttl=60)
+def get_inventory_data():
+    try:
+        response = requests.get(f"{API_BASE_URL}/inventory")
+        if response.status_code == 200:
+            return pd.DataFrame(response.json())
+        else:
+            st.error(f"API Error: {response.status_code}")
+            return pd.DataFrame()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Connection Error: {e}")
+        return pd.DataFrame()
+
+def add_product(product_data):
+    try:
+        response = requests.post(f"{API_BASE_URL}/inventory", json=product_data)
+        return response.status_code == 201
+    except requests.exceptions.RequestException:
+        return False
+
+def update_product(product_id, product_data):
+    try:
+        response = requests.put(f"{API_BASE_URL}/inventory/{product_id}", json=product_data)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
+def delete_product(product_id):
+    try:
+        response = requests.delete(f"{API_BASE_URL}/inventory/{product_id}")
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
 
 # Custom CSS
 st.markdown("""
@@ -28,16 +76,6 @@ st.markdown("""
         color: white;
         box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     }
-    
-    .inventory-card {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        margin: 1rem 0;
-        border-left: 4px solid #2a5298;
-    }
-    
     .alert-card {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
         padding: 1rem;
@@ -45,28 +83,12 @@ st.markdown("""
         color: white;
         margin: 0.5rem 0;
     }
-    
     .success-card {
         background: linear-gradient(135deg, #2ed573 0%, #1e90ff 100%);
         padding: 1rem;
         border-radius: 10px;
         color: white;
         margin: 0.5rem 0;
-    }
-    
-    .stButton > button {
-        background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
-        color: white;
-        border: none;
-        border-radius: 25px;
-        padding: 0.5rem 2rem;
-        font-weight: bold;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -79,227 +101,186 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Create sample inventory data
-@st.cache_data
-def load_inventory_data():
-    np.random.seed(42)
-    categories = ['Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 'Beauty']
-    
-    data = []
-    for i in range(150):
-        data.append({
-            'Product ID': f'PRD-{1000 + i}',
-            'Product Name': f'Product {i+1}',
-            'Category': np.random.choice(categories),
-            'Current Stock': np.random.randint(0, 500),
-            'Min Stock Level': np.random.randint(10, 50),
-            'Max Stock Level': np.random.randint(100, 1000),
-            'Unit Price': round(np.random.uniform(5, 500), 2),
-            'Supplier': f'Supplier {np.random.randint(1, 20)}',
-            'Last Updated': datetime.now() - timedelta(days=np.random.randint(0, 30)),
-            'Status': np.random.choice(['In Stock', 'Low Stock', 'Out of Stock', 'Overstocked'], p=[0.6, 0.2, 0.1, 0.1])
-        })
-    
-    return pd.DataFrame(data)
+# Backend status check
+if not check_backend_health():
+    st.error("❌ Backend disconnected. Please try again later.")
+    st.stop()
 
-# Load data
-inventory_df = load_inventory_data()
+# Load data from backend
+inventory_df = get_inventory_data()
+
+if inventory_df.empty:
+    st.error("Unable to load inventory data. Please check backend connection.")
+    st.stop()
+
+# Sidebar backend status
+st.sidebar.markdown("### 🔌 Backend Status")
+if check_backend_health():
+    st.sidebar.success("✅ Connected")
+else:
+    st.sidebar.error("❌ Disconnected")
 
 # Sidebar filters
 st.sidebar.markdown("### 🎛️ Filters")
-
-# Category filter
-categories = ['All'] + sorted(inventory_df['Category'].unique().tolist())
+categories = ['All'] + sorted(inventory_df['category'].unique().tolist())
 selected_category = st.sidebar.selectbox("Category", categories)
 
-# Status filter
-statuses = ['All'] + sorted(inventory_df['Status'].unique().tolist())
+statuses = ['All'] + sorted(inventory_df['status'].unique().tolist())
 selected_status = st.sidebar.selectbox("Status", statuses)
-
-# Stock level filter
-min_stock, max_stock = st.sidebar.slider(
-    "Stock Range", 
-    min_value=0, 
-    max_value=int(inventory_df['Current Stock'].max()),
-    value=(0, int(inventory_df['Current Stock'].max()))
-)
 
 # Apply filters
 filtered_df = inventory_df.copy()
 if selected_category != 'All':
-    filtered_df = filtered_df[filtered_df['Category'] == selected_category]
+    filtered_df = filtered_df[filtered_df['category'] == selected_category]
 if selected_status != 'All':
-    filtered_df = filtered_df[filtered_df['Status'] == selected_status]
-filtered_df = filtered_df[
-    (filtered_df['Current Stock'] >= min_stock) & 
-    (filtered_df['Current Stock'] <= max_stock)
-]
+    filtered_df = filtered_df[filtered_df['status'] == selected_status]
 
 # Key metrics
 st.markdown("### 📊 Key Metrics")
-
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    total_products = len(filtered_df)
-    st.metric("Total Products", total_products)
+    st.metric("Total Products", len(filtered_df))
 
 with col2:
-    low_stock_count = len(filtered_df[filtered_df['Current Stock'] <= filtered_df['Min Stock Level']])
-    st.metric("Low Stock Items", low_stock_count, delta=f"{low_stock_count} items")
+    low_stock = len(filtered_df[filtered_df['current_stock'] <= filtered_df['min_stock_level']])
+    st.metric("Low Stock Items", low_stock)
 
 with col3:
-    out_of_stock = len(filtered_df[filtered_df['Current Stock'] == 0])
+    out_of_stock = len(filtered_df[filtered_df['current_stock'] == 0])
     st.metric("Out of Stock", out_of_stock)
 
 with col4:
-    total_value = (filtered_df['Current Stock'] * filtered_df['Unit Price']).sum()
+    total_value = (filtered_df['current_stock'] * filtered_df['unit_price']).sum()
     st.metric("Total Inventory Value", f"${total_value:,.2f}")
 
 # Alerts section
 st.markdown("### 🚨 Inventory Alerts")
-
 col1, col2 = st.columns(2)
 
 with col1:
-    low_stock_items = filtered_df[filtered_df['Current Stock'] <= filtered_df['Min Stock Level']]
+    low_stock_items = filtered_df[filtered_df['current_stock'] <= filtered_df['min_stock_level']]
     if len(low_stock_items) > 0:
         st.markdown("#### ⚠️ Low Stock Alerts")
         for _, item in low_stock_items.head(5).iterrows():
             st.markdown(f"""
             <div class="alert-card">
-                <strong>{item['Product Name']}</strong><br>
-                Current: {item['Current Stock']} | Min: {item['Min Stock Level']}
+                <strong>{item['product_name']}</strong><br>
+                Current: {item['current_stock']} | Min: {item['min_stock_level']}
             </div>
             """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="success-card">
-            <strong>✅ All items are well-stocked!</strong>
-        </div>
-        """, unsafe_allow_html=True)
 
 with col2:
-    out_of_stock_items = filtered_df[filtered_df['Current Stock'] == 0]
+    out_of_stock_items = filtered_df[filtered_df['current_stock'] == 0]
     if len(out_of_stock_items) > 0:
         st.markdown("#### ❌ Out of Stock")
         for _, item in out_of_stock_items.head(5).iterrows():
             st.markdown(f"""
             <div class="alert-card">
-                <strong>{item['Product Name']}</strong><br>
-                Category: {item['Category']} | Supplier: {item['Supplier']}
+                <strong>{item['product_name']}</strong><br>
+                Category: {item['category']} | Supplier: {item['supplier']}
             </div>
             """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="success-card">
-            <strong>✅ No out-of-stock items!</strong>
-        </div>
-        """, unsafe_allow_html=True)
 
 # Charts section
 st.markdown("### 📈 Inventory Analytics")
-
 col1, col2 = st.columns(2)
 
 with col1:
-    # Stock distribution by category
-    category_stock = filtered_df.groupby('Category')['Current Stock'].sum().reset_index()
-    fig_pie = px.pie(
-        category_stock, 
-        values='Current Stock', 
-        names='Category',
-        title='Stock Distribution by Category',
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
-    fig_pie.update_layout(height=400)
+    category_stock = filtered_df.groupby('category')['current_stock'].sum().reset_index()
+    fig_pie = px.pie(category_stock, values='current_stock', names='category', title='Stock Distribution by Category')
     st.plotly_chart(fig_pie, use_container_width=True)
 
 with col2:
-    # Status distribution
-    status_counts = filtered_df['Status'].value_counts().reset_index()
+    status_counts = filtered_df['status'].value_counts().reset_index()
     status_counts.columns = ['Status', 'Count']
-    fig_bar = px.bar(
-        status_counts, 
-        x='Status', 
-        y='Count',
-        title='Products by Status',
-        color='Status',
-        color_discrete_map={
-            'In Stock': '#2ed573',
-            'Low Stock': '#ffa502',
-            'Out of Stock': '#ff4757',
-            'Overstocked': '#3742fa'
-        }
-    )
-    fig_bar.update_layout(height=400)
+    fig_bar = px.bar(status_counts, x='Status', y='Count', title='Products by Status')
     st.plotly_chart(fig_bar, use_container_width=True)
 
-# Inventory value by category
-category_value = filtered_df.groupby('Category').apply(
-    lambda x: (x['Current Stock'] * x['Unit Price']).sum()
-).reset_index()
-category_value.columns = ['Category', 'Total Value']
+# Product management actions
+st.markdown("### 🔧 Product Management")
 
-fig_value = px.bar(
-    category_value, 
-    x='Category', 
-    y='Total Value',
-    title='Inventory Value by Category',
-    color='Total Value',
-    color_continuous_scale='Blues'
-)
-fig_value.update_layout(height=400)
-st.plotly_chart(fig_value, use_container_width=True)
+tab1, tab2, tab3 = st.tabs(["Add Product", "Update Product", "Delete Product"])
 
-# Inventory management actions
-st.markdown("### 🔧 Quick Actions")
+with tab1:
+    with st.form("add_product"):
+        col1, col2 = st.columns(2)
+        with col1:
+            product_name = st.text_input("Product Name")
+            category = st.selectbox("Category", inventory_df['category'].unique())
+            current_stock = st.number_input("Current Stock", min_value=0, value=0)
+        with col2:
+            unit_price = st.number_input("Unit Price", min_value=0.0, value=0.0)
+            min_stock = st.number_input("Min Stock Level", min_value=0, value=10)
+            supplier = st.text_input("Supplier")
+        
+        if st.form_submit_button("Add Product"):
+            product_data = {
+                "product_name": product_name,
+                "category": category,
+                "current_stock": current_stock,
+                "unit_price": unit_price,
+                "min_stock_level": min_stock,
+                "supplier": supplier
+            }
+            if add_product(product_data):
+                st.success("Product added successfully!")
+                st.rerun()
+            else:
+                st.error("Failed to add product")
 
-col1, col2, col3, col4 = st.columns(4)
+with tab2:
+    selected_product = st.selectbox("Select Product to Update", inventory_df['product_id'].tolist())
+    if selected_product:
+        product_info = inventory_df[inventory_df['product_id'] == selected_product].iloc[0]
+        with st.form("update_product"):
+            col1, col2 = st.columns(2)
+            with col1:
+                new_stock = st.number_input("New Stock Level", value=int(product_info['current_stock']))
+                new_price = st.number_input("New Price", value=float(product_info['unit_price']))
+            with col2:
+                new_min_stock = st.number_input("New Min Stock", value=int(product_info['min_stock_level']))
+                new_supplier = st.text_input("New Supplier", value=product_info['supplier'])
+            
+            if st.form_submit_button("Update Product"):
+                update_data = {
+                    "current_stock": new_stock,
+                    "unit_price": new_price,
+                    "min_stock_level": new_min_stock,
+                    "supplier": new_supplier
+                }
+                if update_product(selected_product, update_data):
+                    st.success("Product updated successfully!")
+                    st.rerun()
+                else:
+                    st.error("Failed to update product")
 
-with col1:
-    if st.button("📥 Add New Product"):
-        st.success("Product form will open here!")
-
-with col2:
-    if st.button("🔄 Bulk Update"):
-        st.success("Bulk update panel will open here!")
-
-with col3:
-    if st.button("📋 Generate Report"):
-        st.success("Report generation started!")
-
-with col4:
-    if st.button("🔔 Set Alert"):
-        st.success("Alert configuration will open here!")
+with tab3:
+    delete_product_id = st.selectbox("Select Product to Delete", inventory_df['product_id'].tolist())
+    if st.button("Delete Product", type="secondary"):
+        if delete_product(delete_product_id):
+            st.success("Product deleted successfully!")
+            st.rerun()
+        else:
+            st.error("Failed to delete product")
 
 # Detailed inventory table
 st.markdown("### 📋 Detailed Inventory")
-
-# Search functionality
 search_term = st.text_input("🔍 Search products...", placeholder="Enter product name or ID")
 
 if search_term:
     filtered_df = filtered_df[
-        filtered_df['Product Name'].str.contains(search_term, case=False) |
-        filtered_df['Product ID'].str.contains(search_term, case=False)
+        filtered_df['product_name'].str.contains(search_term, case=False) |
+        filtered_df['product_id'].str.contains(search_term, case=False)
     ]
 
-# Display table
-st.dataframe(
-    filtered_df.style.format({
-        'Unit Price': '${:.2f}',
-        'Last Updated': lambda x: x.strftime('%Y-%m-%d')
-    }).map(
-        lambda x: 'background-color: #ffebee' if x == 'Out of Stock' else 
-                  'background-color: #fff3e0' if x == 'Low Stock' else '', 
-        subset=['Status']
-    ),
-    use_container_width=True,
-    hide_index=True
-)
+st.dataframe(filtered_df, use_container_width=True, hide_index=True)
 
-# Footer
+# Auto-refresh
+if st.sidebar.button("🔄 Refresh Data"):
+    st.cache_data.clear()
+    st.rerun()
+
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 1rem; color: #666;">

@@ -33,34 +33,38 @@ class OllamaService:
         """Verify that the specified model is available"""
         try:
             result = ollama.list()
+
             # 1) Check raw string output
             if isinstance(result, str):
                 if self.model_name in result:
                     logger.info(f"Model {self.model_name} is available (string output)")
                     return True
                 logger.warning(f"Model {self.model_name} not found in string output")
+
             # 2) Normalize API responses
-            raw_entries = []
-            if isinstance(result, dict):
-                raw_entries = result.get('models') or result.get('data') or []
-            elif isinstance(result, list):
-                raw_entries = result
-            else:
-                logger.warning(f"Unexpected response type from ollama.list(): {type(result)}")
-            available_models = []
-            for entry in raw_entries:
-                if isinstance(entry, dict):
-                    name = entry.get('name') or entry.get('model') or entry.get('id')
-                elif isinstance(entry, str):
-                    name = entry
-                else:
-                    name = getattr(entry, 'name', None) or getattr(entry, 'model', None) or getattr(entry, 'id', None) or str(entry)
-                if name:
-                    available_models.append(name)
+            def extract_models(data) -> List[str]:
+                if isinstance(data, dict):
+                    return [m.get('name') or m.get('model') for m in data.get('models', []) if isinstance(m, dict)]
+                if isinstance(data, list):
+                    return [m.get('name') or m.get('model') for m in data if isinstance(m, dict)]
+                return []
+
+            available_models = extract_models(result)
+
+            # 🌀 Retry once if list is empty
+            if not available_models:
+                import time
+                logger.warning("No models found on first attempt. Retrying after 2 seconds...")
+                time.sleep(2)
+                result = ollama.list()
+                available_models = extract_models(result)
+
             if self.model_name in available_models:
                 logger.info(f"Model {self.model_name} is available (API output)")
                 return True
+
             logger.warning(f"Model {self.model_name} not found in API output. Models: {available_models}")
+
             # 3) Fallback: shell out to CLI
             try:
                 import subprocess
@@ -72,7 +76,9 @@ class OllamaService:
                 logger.warning(f"Model {self.model_name} not found in CLI output")
             except Exception as cli_err:
                 logger.error(f"CLI fallback failed: {cli_err}")
+
             return False
+
         except Exception as e:
             logger.error(f"Error checking model availability: {e}")
             return False

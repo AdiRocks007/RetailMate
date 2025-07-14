@@ -28,7 +28,11 @@ logger = logging.getLogger("retailmate-api")
 class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
-    cors_origins: List[str] = ["http://localhost:3000"]
+    #cors_origins: List[str] = ["http://localhost:8501"]  # ✅ Updated for Streamlit frontend
+    cors_origins: List[str] = [
+        "http://localhost:8501",
+        "http://127.0.0.1:8501"
+    ]
     environment: str = "development"
     
     class Config:
@@ -273,11 +277,12 @@ async def chat_endpoint(request: ChatRequest):
             recommended_products=recommended_products
         )
         
-    except HTTPException:
-        raise
     except Exception as e:
+        import traceback
         logger.error(f"Chat endpoint error: {e}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/shopping/recommend")
 async def shopping_recommend(request: ShoppingRequest):
@@ -514,7 +519,7 @@ async def clear_conversation(conversation_id: str):
     raise HTTPException(status_code=404, detail="Conversation not found")
 
 # Run the server
-if __name__ == "_main_":
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
