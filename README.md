@@ -6,17 +6,17 @@ RetailMate is an AI-powered, emotion-aware, calendar-integrated shopping assista
 
 ##  Features
 
-- ** Intelligent AI Assistant**: Powered by Qwen 2.5 3B model with Ollama for local, privacy-focused inference
-- ** Emotion-Aware**: Advanced sentiment analysis using VADER + TextBlob to tailor recommendations to your mood
-- ** Calendar Integration**: Proactive shopping suggestions based on upcoming events and occasions
-- ** Smart Retrieval**: RAG implementation with ChromaDB for contextual, knowledge-based responses
-- ** Privacy-First**: 100% local processing - your data never leaves your machine
-- ** Proactive Recommendations**: Concierge-like agentic behavior for anticipatory shopping assistance
+- **Intelligent AI Assistant**: Powered by Qwen 2.5 3B model with Ollama for local, privacy-focused inference
+- **Emotion-Aware**: Advanced sentiment analysis using VADER + TextBlob to tailor recommendations to your mood
+- **Calendar Integration**: Proactive shopping suggestions based on upcoming events and occasions
+- **Smart Retrieval**: RAG implementation with ChromaDB for contextual, knowledge-based responses
+- **Privacy-First**: 100% local processing - your data never leaves your machine
+- **Proactive Recommendations**: Concierge-like agentic behavior for anticipatory shopping assistance
 
 ##  Prerequisites
 
 - **Windows OS** (10/11)
-- **Python 3.11+** 
+- **Python 3.10+** 
 - **Git** (latest version)
 - **8GB+ RAM** recommended
 - **Internet connection** (for initial setup)
