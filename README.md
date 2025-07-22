@@ -262,5 +262,3 @@ If you encounter issues:
 - [Streamlit](https://streamlit.io/) for the frontend interface
 
 ---
-
-**RetailMate** - Built with ❤️ for privacy-conscious AI enthusiasts!
