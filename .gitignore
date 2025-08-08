@@ -19,6 +19,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+venv/
 
 # Environment
 .env
@@ -62,3 +63,5 @@ node_modules/
 # Temporary
 *.tmp
 *.temp
+
+venv/

@@ -1,0 +1,45 @@
+{
+  "server": {
+    "name": "retailmate-mcp",
+    "version": "1.0.0",
+    "description": "RetailMate MCP Server for AI-powered shopping assistant data integration",
+    "author": "RetailMate Team",
+    "platform": "Windows",
+    "mcp_version": "1.0.0"
+  },
+  "capabilities": {
+    "tools": true,
+    "resources": true,
+    "prompts": true,
+    "logging": true,
+    "experimental": false
+  },
+  "data_sources": {
+    "enabled": ["users", "products", "calendar"],
+    "refresh_interval": 3600,
+    "cache_enabled": true,
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 100,
+      "burst_limit": 10
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "logs\\mcp_server.log",
+    "max_file_size": "10MB",
+    "backup_count": 5
+  },
+  "security": {
+    "api_key_required": false,
+    "allowed_origins": ["localhost", "127.0.0.1"],
+    "max_request_size": "10MB",
+    "timeout_seconds": 30
+  },
+  "performance": {
+    "max_concurrent_requests": 50,
+    "request_timeout": 30,
+    "keepalive_timeout": 60
+  }
+}
