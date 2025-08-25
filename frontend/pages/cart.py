@@ -1,4 +1,5 @@
 import streamlit as st
+<<<<<<< HEAD
 import plotly.express as px
 import pandas as pd
 import requests
@@ -282,15 +283,27 @@ if st.sidebar.button("🗑️ Clear Cart"):
 
 if st.sidebar.button("🔄 Refresh Cart"):
     st.rerun()
+=======
 
-# Main content
-st.markdown("""
-<div class="main-header">
-    <h1>🛒 Your Shopping Cart</h1>
-    <p style="font-size: 1.2rem; margin-top: 1rem;">Review and manage your selected items</p>
-</div>
-""", unsafe_allow_html=True)
+st.set_page_config(page_title="Cart", page_icon="🛒", layout="wide")
 
+if 'cart_items' not in st.session_state:
+    st.session_state.cart_items = []
+
+def cart_total():
+    return sum(item['price'] * item['quantity'] for item in st.session_state.cart_items)
+
+def cart_count():
+    return sum(item['quantity'] for item in st.session_state.cart_items)
+>>>>>>> b5a1f150d117dddabd47ce7117e88e50ccd482b9
+
+def update_quantity(idx, delta):
+    st.session_state.cart_items[idx]['quantity'] += delta
+    if st.session_state.cart_items[idx]['quantity'] < 1:
+        st.session_state.cart_items[idx]['quantity'] = 1
+    st.experimental_rerun()
+
+<<<<<<< HEAD
 # Main cart content
 if len(cart_items) == 0:
     st.markdown("""
@@ -478,3 +491,39 @@ st.markdown(f"""
     <p>💳 SSL Secured | 🚚 Free returns | Backend: {backend_status}</p>
 </div>
 """, unsafe_allow_html=True)
+=======
+def remove_item(idx):
+    st.session_state.cart_items.pop(idx)
+    st.experimental_rerun()
+
+def clear_cart():
+    st.session_state.cart_items = []
+    st.experimental_rerun()
+
+st.title("🛒 Your Cart")
+
+if not st.session_state.cart_items:
+    st.info("Your cart is empty.")
+else:
+    for idx, item in enumerate(st.session_state.cart_items):
+        cols = st.columns([2, 1, 1, 1])
+        with cols[0]:
+            st.write(f"**{item['name']}**")
+            st.write(f"${item['price']:.2f} x {item['quantity']}")
+        with cols[1]:
+            if st.button("-", key=f"dec_{idx}"):
+                update_quantity(idx, -1)
+            if st.button("+", key=f"inc_{idx}"):
+                update_quantity(idx, 1)
+        with cols[2]:
+            st.write(f"${item['price']*item['quantity']:.2f}")
+        with cols[3]:
+            if st.button("Remove", key=f"rm_{idx}"):
+                remove_item(idx)
+    st.markdown(f"**Total:** ${cart_total():.2f}")
+    if st.button("Clear Cart"):
+        clear_cart()
+
+st.markdown("---")
+st.caption("RetailMate - Minimal Cart | Powered by MCP")
+>>>>>>> b5a1f150d117dddabd47ce7117e88e50ccd482b9
